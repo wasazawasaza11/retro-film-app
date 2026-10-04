@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ja"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#141414"><meta name="apple-mobile-web-app-title" content="Retro Film"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="description" content="端末内で写真を加工するレトロフィルムPWA"><title>Retro Film</title>
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="assets/icons/icon-192.png"><link rel="icon" href="assets/icons/icon.svg"><link rel="stylesheet" href="css/style.css?v=20261004-5">
+</head><body><main>
+<section id="stage" class="preview" aria-label="写真プレビュー。上下ドラッグでフィルター、2本指で拡大縮小" tabindex="0">
+<div id="photo-view"><canvas id="preview" hidden></canvas><div id="lens" aria-hidden="true"></div><div id="crop-frame" hidden aria-hidden="true"><i></i><i></i></div></div>
+<label id="empty" class="empty" for="photo"><span>＋</span><strong>写真に、時間の気配を。</strong><small>写真を選んで、上下にスワイプ</small></label>
+<div id="preset-toast" role="status" aria-live="polite"></div><div id="compare-label" hidden>BEFORE</div>
+</section>
+<section class="bottom-bar"><header><h1>RETRO <span>FILM</span></h1><label class="open-photo" for="photo" tabindex="0" role="button">写真を選ぶ</label><input id="photo" type="file" accept="image/*" hidden></header>
+<nav class="toolbar" aria-label="写真の操作">
+<button id="adjust-button" disabled aria-label="調整" title="調整"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 17h16M9 4v6M15 14v6"/></svg><span>調整</span></button>
+<button id="crop-button" disabled aria-label="トリミング" title="トリミング"><svg viewBox="0 0 24 24"><path d="M7 3v14h14M3 7h14v14"/></svg><span>トリミング</span></button>
+<button id="compare-button" disabled aria-label="Before / After" aria-pressed="false" title="元画像と比較"><svg viewBox="0 0 24 24"><path d="M12 3v18M8 5H4v14h4M16 5h4v14h-4"/></svg><span>比較</span></button>
+<button id="export-button" disabled aria-label="書き出し" title="書き出し"><svg viewBox="0 0 24 24"><path d="M12 15V3m-4 4 4-4 4 4M5 12v8h14v-8"/></svg><span>書き出し</span></button>
+</nav><p id="status" role="status" aria-live="polite">上下スワイプでフィルター・2本指で拡大</p></section>
+</main>
+<dialog id="adjust-sheet" class="sheet" aria-labelledby="adjust-title"><div class="sheet-heading"><h2 id="adjust-title">調整</h2><button class="close-sheet" aria-label="調整を閉じる">×</button></div><div class="sheet-scroll"><div class="control"><label for="intensity">プリセット強度 <output id="intensity-value">70%</output></label><input id="intensity" type="range" min="0" max="100" value="70"></div><div id="adjustments"></div></div></dialog>
+<dialog id="export-sheet" class="sheet" aria-labelledby="export-title"><div class="sheet-heading"><h2 id="export-title">書き出し</h2><button class="close-sheet" aria-label="書き出し設定を閉じる">×</button></div><div class="sheet-scroll"><div class="export-options"><label for="format">形式</label><select id="format"><option value="image/jpeg">JPEG</option><option value="image/png">PNG</option></select></div><div id="quality-row" class="control"><label for="quality">JPEG品質 <output id="quality-value">90%</output></label><input id="quality" type="range" min="1" max="100" value="90"></div><p id="dimensions"></p><p id="export-status" role="status"></p><button id="share-save" class="primary" disabled>画像を準備中…</button><a id="download" hidden>加工した写真をダウンロード</a><small>共有先で「画像を保存」を選択してください。<br>共有に対応しない環境ではダウンロードします。</small></div></dialog>
+<section id="crop-panel" hidden aria-label="トリミング設定"><div class="crop-heading"><strong>トリミング</strong><button id="crop-cancel">キャンセル</button><button id="crop-apply">確定</button></div><div class="crop-controls"><label>比率 <select id="crop-ratio"><option value="free">Free</option><option value="1">1:1</option><option value="1.3333333333333333">4:3</option><option value="0.75">3:4</option><option value="1.7777777777777777">16:9</option><option value="0.5625">9:16</option></select></label><button id="rotate-90" aria-label="90度回転">↻ 90°</button></div><div id="free-size"><label>幅 <input id="crop-width" type="range" min="20" max="100" value="100"></label><label>高さ <input id="crop-height" type="range" min="20" max="100" value="100"></label></div><label class="angle-label" for="crop-angle">角度 <output id="angle-value">0°</output><input id="crop-angle" type="range" min="-45" max="45" step="0.5" value="0"></label><small>ドラッグで位置・2本指で拡大縮小</small></section>
+<details id="debug-panel" hidden open><summary>DEBUG · <span id="debug-state">idle</span></summary><pre id="debug-log" aria-live="polite">idle</pre></details>
+<script src="js/debug-panel.js?v=20261004-5"></script>
+<script type="module" src="js/app.js?v=20261004-5"></script></body></html>
+
+
+
+
+
