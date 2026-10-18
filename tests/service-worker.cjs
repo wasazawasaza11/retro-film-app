@@ -26,10 +26,10 @@ const server=http.createServer((req,res)=>{
   await page.evaluate(async()=>{await caches.open('retro-film-cache-v3');await caches.open('unrelated-application');});
   phase='new';
   await page.evaluate(async()=>{const registration=await navigator.serviceWorker.getRegistration();await registration.update();});
-  await page.waitForFunction(async()=>{const keys=await caches.keys();return keys.includes('retro-film-cache-v8')&&!keys.includes('retro-film-v4')&&!keys.includes('retro-film-cache-v3');});
+  await page.waitForFunction(async()=>{const keys=await caches.keys();return keys.includes('retro-film-cache-v9')&&!keys.includes('retro-film-v4')&&!keys.includes('retro-film-cache-v3');});
   const keys=await page.evaluate(()=>caches.keys());assert.ok(keys.includes('unrelated-application'));
-  const cached=await page.evaluate(async()=>{const c=await caches.open('retro-film-cache-v8');return {count:(await c.keys()).length,html:await(await c.match('/')).text(),css:await(await c.match('/css/style.css')).text(),js:await(await c.match('/js/app.js')).text()};});
-  assert.equal(cached.count,18);assert.ok(cached.html.includes('fresh-one'));assert.ok(cached.css.includes('first'));assert.ok(cached.js.includes('first'));
+  const cached=await page.evaluate(async()=>{const c=await caches.open('retro-film-cache-v9');return {count:(await c.keys()).length,html:await(await c.match('/')).text(),css:await(await c.match('/css/style.css')).text(),js:await(await c.match('/js/app.js')).text()};});
+  assert.equal(cached.count,19);assert.ok(cached.html.includes('fresh-one'));assert.ok(cached.css.includes('first'));assert.ok(cached.js.includes('first'));
   // Activation alone must not reload an open editing page.
   assert.equal(await page.title(),'OLD UI');await page.reload();assert.equal(await page.title(),'fresh-one');
   htmlVersion='fresh-two';assetVersion='second';await page.reload();assert.equal(await page.title(),'fresh-two');
@@ -37,10 +37,10 @@ const server=http.createServer((req,res)=>{
   const networkRequests=requests.filter(r=>['/','/index.html','/css/style.css','/js/app.js'].includes(r.url));assert.ok(networkRequests.some(r=>r.cache?.includes('no-cache')||r.cache?.includes('no-store')));
   // sw.js must itself bypass the HTTP cache, and must never enter Cache Storage.
   phase='old';const worker=await page.evaluate(async()=>await(await fetch('./sw.js')).text());assert.ok(worker.includes('retro-film-v4'));
-  const swCached=await page.evaluate(async()=>!!await(await caches.open('retro-film-cache-v8')).match('./sw.js'));assert.equal(swCached,false);phase='new';
+  const swCached=await page.evaluate(async()=>!!await(await caches.open('retro-film-cache-v9')).match('./sw.js'));assert.equal(swCached,false);phase='new';
   await context.setOffline(true);await page.reload();assert.equal(await page.title(),'fresh-two');
   const offline=await page.evaluate(async()=>({css:await(await fetch('./css/style.css')).text(),js:await(await fetch('./js/app.js')).text()}));assert.ok(offline.css.includes('second'));assert.ok(offline.js.includes('second'));
-  console.log('PASS: open old-v4 page upgrades without closing; legacy caches removed; unrelated cache preserved; all 18 files refreshed; HTML/CSS/JS network-first bypass HTTP cache; no forced reload; sw.js uncached; offline uses latest version');
+  console.log('PASS: open old-v4 page upgrades without closing; legacy caches removed; unrelated cache preserved; all 19 files refreshed; HTML/CSS/JS network-first bypass HTTP cache; no forced reload; sw.js uncached; offline uses latest version');
  }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}
 })().catch(e=>{console.error(e);process.exitCode=1;});
 

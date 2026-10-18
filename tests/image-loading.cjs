@@ -8,7 +8,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
  await page.goto('http://127.0.0.1:8087/?debug=1');
  await page.waitForFunction(()=>document.querySelector('#debug-log').textContent.includes('app initialized'));
  const dom=await page.evaluate(()=>{const ids=[...document.querySelectorAll('[id]')].map(e=>e.id);return {duplicates:ids.filter((id,i)=>ids.indexOf(id)!==i),photoCount:document.querySelectorAll('#photo').length,type:document.getElementById('photo').type,accept:document.getElementById('photo').accept,labelTarget:document.querySelector('.open-photo').htmlFor,oldWheel:document.querySelector('#wheel,#selected')!==null};});
- assert.deepEqual(dom,{duplicates:[],photoCount:1,type:'file',accept:'image/*',labelTarget:'photo',oldWheel:false});
+ assert.deepEqual(dom,{duplicates:[],photoCount:1,type:'file',accept:'image/*,video/*',labelTarget:'photo',oldWheel:false});
  for(const ext of ['jpg','png','webp']){
   // Real label click opens the current input. No direct renderer/test helper call.
   const chooser=page.waitForEvent('filechooser');await page.locator('label.open-photo').tap();

@@ -94,11 +94,11 @@ const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
   await page.locator('#compare-button').click();assert.equal(await page.locator('#compare-button').getAttribute('aria-pressed'),'true');await page.locator('#compare-button').click();
   // Replacing the photo resets geometry; up from the first preset wraps to B&W.
   const retainedStrength=await page.locator('#adjust-contrast').inputValue();
-  await page.locator('#photo').setInputFiles(path.join(__dirname,'fixtures','photo.jpg'));await page.waitForFunction(()=>document.querySelector('#preview').height===600);
+  await page.locator('#photo').setInputFiles(path.join(__dirname,'fixtures','photo.jpg'));await page.waitForFunction(()=>document.querySelector('#preview').height===600&&!document.querySelector('#export-button').disabled);
   assert.equal(await page.locator('#adjust-contrast').inputValue(),retainedStrength);
   assert.equal(Number(await page.locator('#stage').getAttribute('data-zoom')),1);
   await page.reload();
-  await page.locator('#photo').setInputFiles(path.join(__dirname,'fixtures','photo.png'));await page.waitForFunction(()=>document.querySelector('#preview').height===600);
+  await page.locator('#photo').setInputFiles(path.join(__dirname,'fixtures','photo.png'));await page.waitForFunction(()=>document.querySelector('#preview').height===600&&!document.querySelector('#export-button').disabled);
   await page.locator('#stage').press('ArrowUp');await page.waitForFunction(()=>document.querySelector('#preset-toast').textContent==='B&W'&&!document.querySelector('#lens').classList.contains('visible'));
   await touch('touchStart',[[1,130,300],[2,250,300]]);await touch('touchMove',[[1,90,300],[2,290,300]]);await touch('touchEnd',[]);assert.ok(Number(await page.locator('#stage').getAttribute('data-zoom'))>1);
   await page.evaluate(()=>{Object.defineProperty(navigator,'canShare',{configurable:true,value:()=>false});});

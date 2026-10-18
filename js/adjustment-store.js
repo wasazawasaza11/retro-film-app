@@ -1,4 +1,4 @@
-import {presets,fields} from './presets.js?v=20261004-5';
+import {presets,fields} from './presets.js?v=20261018-1';
 export const storageKey='retroFilm.adjustments.v1';
 const validValues=value=>value&&fields.every(([k,label,min,max])=>Number.isFinite(value[k])&&value[k]>=min&&value[k]<=max)&&[0,1].includes(value.monochrome);
 export class AdjustmentStore{

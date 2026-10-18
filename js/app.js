@@ -1,22 +1,25 @@
-import {AdjustmentStore} from './adjustment-store.js?v=20261004-5';
-import {loadImage} from './image-loader.js?v=20261004-5';
-import {Renderer} from './renderer.js?v=20261004-5';
-import {presets,fields,interpolate,wrap} from './presets.js?v=20261004-5';
-import {PhotoGestures} from './photo-gestures.js?v=20261004-5';
-import {incomingLens} from './lens.js?v=20261004-5';
-import {createCrop,constrainCrop,setCropRatio,panCrop,setCropAngle} from './crop.js?v=20261004-5';
-import {exportImage,shareableFile} from './exporter.js?v=20261004-5';
+import {AdjustmentStore} from './adjustment-store.js?v=20261018-1';
+import {loadImage} from './image-loader.js?v=20261018-1';
+import {Renderer} from './renderer.js?v=20261018-1';
+import {presets,fields,interpolate,wrap} from './presets.js?v=20261018-1';
+import {PhotoGestures} from './photo-gestures.js?v=20261018-1';
+import {incomingLens} from './lens.js?v=20261018-1';
+import {createCrop,constrainCrop,setCropRatio,panCrop,setCropAngle} from './crop.js?v=20261018-1';
+import {exportImage,shareableFile} from './exporter.js?v=20261018-1';
+import {loadVideo,VideoPlayback} from './video-source.js?v=20261018-1';
 const debug=window.retroDebug; const adjustments=new AdjustmentStore();
 const $=id=>{const element=document.getElementById(id);if(!element){const error=new Error(`Required DOM element #${id} is null`);debug?.error("DOM reference",error);throw error;}return element;},stage=$('stage'),view=$('photo-view');
 let displayReady=false;
 let angleEditing=false,angleAnchor=null,pendingAngle=null,angleRequest=0;
 let renderCalls=0,angleFrames=0,renderSource='state-update';
 let image=null,parameters=adjustments.values(0),intensity=.7,index=0,busy=false,before=false,transition=null;
+// image remains the renderer's drawable adapter; media owns separate sources/state.
+const media={type:'image',photo:null,photoCrop:null,video:null,playback:null};
 let crop=null,draft=null,snapshot=null,zoom=1,pan={x:0,y:0},pinch=null,viewSize={width:1,height:1};
 let downloadUrl=null,prepared=null,exportToken=0,revision=0,toastTimer=0;
 const sliders=new Map(),status=message=>$('status').textContent=message;
 const renderer=new Renderer($('preview'),(width,height)=>{const resized=viewSize.width!==width||viewSize.height!==height;viewSize={width,height};if(resized||!angleEditing)layout();if(angleEditing)recordAngle();});
-function render(source='state-update'){if(image&&displayReady){renderCalls++;renderSource=source;renderer.schedule(image,parameters,intensity,error=>{debug?.error("effect render",error);status(error.message);},{crop:draft||crop,transition,before});}}
+function render(source='state-update'){if(image&&displayReady&&!(media.type==='video'&&image.source.seeking)){renderCalls++;renderSource=source;renderer.schedule(image,parameters,intensity,error=>{debug?.error("effect render",error);status(error.message);if(media.type==='video')media.playback?.pause();},{crop:media.type==='image'?(draft||crop):null,transition,before});}}
 function recordAngle(){
   if(!debug||!draft)return;const canvas=$('preview'),s=getComputedStyle(canvas),v=getComputedStyle(view),r=view.getBoundingClientRect(),vp=visualViewport;
   debug.info('ANGLE FRAME '+JSON.stringify({angle:draft.angle,panX:pan.x,panY:pan.y,zoom,baseScale:Math.min(stage.clientWidth/viewSize.width,stage.clientHeight/viewSize.height),minScale:draft.minScale,effectiveScale:draft.scale,cropCenterX:draft.cx,cropCenterY:draft.cy,cropRect:{x:draft.cx-draft.width/2,y:draft.cy-draft.height/2,w:draft.width,h:draft.height},canvas:[canvas.width,canvas.height],canvasCSS:[s.width,s.height],wrapper:{x:r.x,y:r.y,w:r.width,h:r.height},transform:v.transform,transformOrigin:v.transformOrigin,devicePixelRatio,displayX:r.x,displayY:r.y,drawX:-draft.cx,drawY:-draft.cy,scroll:[scrollX,scrollY],viewport:vp?{x:vp.offsetLeft,y:vp.offsetTop,w:vp.width,h:vp.height,scale:vp.scale}:null,renderSource,renderCalls,requestAnimationFrameCount:angleFrames,drawCount:renderer.drawCount}));
@@ -38,7 +41,7 @@ function refreshSliders(){for(const [key,{input,output}] of sliders){input.value
 function clearDownload(){if(downloadUrl)URL.revokeObjectURL(downloadUrl);downloadUrl=null;prepared=null;$('download').hidden=true;exportToken++;$('share-save').disabled=true;}
 function changed(){revision++;clearDownload();}
 function showName(){clearTimeout(toastTimer);$('preset-toast').textContent=presets[index].name;$('preset-toast').classList.add('visible');toastTimer=setTimeout(()=>$('preset-toast').classList.remove('visible'),1100);}
-function setBusy(value){busy=value;$('photo').disabled=value;for(const id of ['adjust-button','crop-button','compare-button','export-button'])$(id).disabled=value||!image||!displayReady;}
+function setBusy(value){busy=value;$('photo').disabled=value;for(const id of ['adjust-button','crop-button','compare-button','export-button'])$(id).disabled=value||!image||!displayReady||(media.type==='video'&&['crop-button','export-button'].includes(id));for(const id of ['video-play','video-seek'])$(id).disabled=value||media.type!=='video';}
 function sheetOpen(){return [...document.querySelectorAll('dialog')].some(d=>d.open);}
 function setBefore(value){before=value;$('compare-button').setAttribute('aria-pressed',String(value));$('compare-label').hidden=!value;render();}
 const gestures=new PhotoGestures(stage,{
@@ -75,11 +78,13 @@ $('photo').addEventListener('change',async event=>{
   if(!file){const error=new Error('選択ファイルが0件です。');debug?.error('file received',error);status(error.message);return;}
   debug?.step('file received');debug?.file(file);$('photo').value='';
   if(busy){debug?.error('input change / busy guard',new Error('Another operation is active'));return;}
+  if(file.type.startsWith('video/')){await selectVideo(file);return;}
+  if(file.type&&!file.type.startsWith('image/')){status('写真または動画を選択してください。');return;}
   let operation='Imageロード';
   settle();setBusy(true);status('写真を読み込み中…');
   try{
     const next=await loadImage(file,debug);
-    operation='source image登録';renderer.clear();const previous=image;image=next;displayReady=false;
+    operation='source image登録';renderer.clear();const previous=media.photo;media.playback?.dispose();media.playback=null;media.video?.release();media.video=null;media.type='image';media.photo=next;media.photoCrop=null;image=next;displayReady=false;$('video-controls').hidden=true;stage.dataset.mediaType='image';
     debug?.info('source image registered');
     operation='zoom/pan/crop初期化';gestures.reset(index);crop=draft=null;transition=null;snapshot=null;before=false;
     $('compare-button').setAttribute('aria-pressed','false');$('compare-label').hidden=true;
@@ -104,9 +109,48 @@ $('photo').addEventListener('change',async event=>{
   finally{setBusy(false);}
 });
 
+const formatTime=seconds=>`${Math.floor(seconds/60)}:${String(Math.floor(seconds%60)).padStart(2,'0')}`;
+function updateVideoTime(element){$('video-time').textContent=`${formatTime(element.currentTime)} / ${formatTime(media.video.duration)}`;$('video-seek').value=element.currentTime;$('video-play').textContent=element.paused?'▶':'Ⅱ';$('video-play').setAttribute('aria-label',element.paused?'再生':'一時停止');}
+async function selectVideo(file){
+  finishAngle();settle();setBusy(true);status('動画を読み込み中…');let next=null;
+  const previous={...media,adapter:image,crop,draft,zoom,pan:{...pan},ready:displayReady};
+  media.playback?.pause();
+  try{
+    next=await loadVideo(file,debug);
+    renderer.clear();media.playback?.dispose();
+    if(media.type==='image'){media.photo=image;media.photoCrop=crop?{...crop}:null;}
+    media.type='video';media.video=next;image=next;displayReady=false;
+    gestures.reset(index);crop=draft=null;transition=snapshot=null;before=false;
+    $('compare-button').setAttribute('aria-pressed','false');$('compare-label').hidden=true;
+    document.body.classList.remove('cropping');$('crop-panel').hidden=true;resetView();changed();
+    renderer.initializePreview(next,null);
+    await new Promise((resolve,reject)=>renderer.schedule(next,parameters,intensity,reject,{onComplete:resolve}));
+    $('empty').hidden=true;displayReady=true;stage.dataset.mediaType='video';
+    $('video-controls').hidden=false;$('video-seek').max=next.duration;
+    media.playback=new VideoPlayback(next,()=>render('video-frame'),updateVideoTime,error=>{debug?.error('video playback',error);status(error.message);});
+    previous.video?.release();
+    updateVideoTime(next.source);debug?.info(`video ready; frame callback=${media.playback.method}`);debug?.step('video render complete');
+    status(next.width*next.height>1920*1080||next.duration>60?'大きい動画です。1080p・30fps程度・60秒以内を推奨します。':'再生ボタンで開始・上下スワイプでフィルター（動画書き出しは未対応）');
+  }catch(error){
+    debug?.error('video load / render',error);status(error.message);
+    if(next&&media.video===next){
+      media.playback?.dispose();next.release();renderer.clear();
+      Object.assign(media,{type:previous.type,photo:previous.photo,photoCrop:previous.photoCrop,video:previous.video,playback:null});
+      image=previous.adapter;crop=previous.crop;draft=previous.draft;zoom=previous.zoom;pan=previous.pan;displayReady=previous.ready;
+      document.body.classList.toggle('cropping',!!draft);$('crop-panel').hidden=!draft;$('video-controls').hidden=media.type!=='video';stage.dataset.mediaType=media.type;
+      if(media.video){media.playback=new VideoPlayback(media.video,()=>render('video-frame'),updateVideoTime,e=>status(e.message));$('video-seek').max=media.video.duration;updateVideoTime(media.video.source);}
+      render('video-load-rollback');layout();
+    }else next?.release();
+  }
+  finally{setBusy(false);}
+}
+$('video-play').addEventListener('click',()=>{if(!media.playback||busy)return;media.video.source.paused?media.playback.play():media.playback.pause();});
+$('video-seek').addEventListener('input',()=>{if(!busy)media.playback?.seek(Number($('video-seek').value));});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)media.playback?.pause();});
+
 function openSheet(id){settle();setBefore(false);$(id).showModal();}
 $('adjust-button').addEventListener('click',()=>openSheet('adjust-sheet'));
-$('export-button').addEventListener('click',()=>{openSheet('export-sheet');prepareExport();});
+$('export-button').addEventListener('click',()=>{if(media.type!=='image')return;openSheet('export-sheet');prepareExport();});
 for(const dialog of document.querySelectorAll('dialog')){
   dialog.querySelector('.close-sheet').addEventListener('click',()=>dialog.close());
   dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientY<r.top||e.clientX<r.left||e.clientX>r.right)dialog.close();}});
@@ -119,7 +163,7 @@ function syncCropControls(){
   const sideways=draft.quarter%2,baseW=sideways?image.height:image.width,baseH=sideways?image.width:image.height;
   $('crop-width').value=Math.round(draft.width/baseW*100);$('crop-height').value=Math.round(draft.height/baseH*100);
 }
-$('crop-button').addEventListener('click',()=>{settle();setBefore(false);draft=crop?{...crop}:createCrop(image.width,image.height);resetView();document.body.classList.add('cropping');$('crop-panel').hidden=false;syncCropControls();render();});
+$('crop-button').addEventListener('click',()=>{if(media.type!=='image')return;settle();setBefore(false);draft=crop?{...crop}:createCrop(image.width,image.height);resetView();document.body.classList.add('cropping');$('crop-panel').hidden=false;syncCropControls();render();});
 function exitCrop(apply){finishAngle();gestures.cancel();if(apply){crop={...draft};changed();}draft=null;document.body.classList.remove('cropping');$('crop-panel').hidden=true;resetView();render();}
 $('crop-cancel').addEventListener('click',()=>exitCrop(false));$('crop-apply').addEventListener('click',()=>exitCrop(true));
 $('crop-ratio').addEventListener('change',()=>{setCropRatio(draft,$('crop-ratio').value,image.width,image.height);syncCropControls();render();});
@@ -140,7 +184,7 @@ $('crop-angle').addEventListener('input',()=>{beginAngle();if(!angleEditing)retu
 for(const event of ['change','pointerup','pointercancel','blur'])$('crop-angle').addEventListener(event,finishAngle);
 $('rotate-90').addEventListener('click',()=>{draft.quarter=(draft.quarter+1)%4;draft.angle=draft.quarter*90+draft.fine;setCropRatio(draft,draft.ratio,image.width,image.height);syncCropControls();render();});
 async function prepareExport(){
-  if(!image)return;clearDownload();const token=exportToken,version=revision,type=$('format').value,quality=Number($('quality').value)/100;
+  if(!image||media.type!=='image')return;clearDownload();const token=exportToken,version=revision,type=$('format').value,quality=Number($('quality').value)/100;
   $('share-save').disabled=true;$('share-save').textContent='画像を準備中…';$('export-status').textContent='元解像度で加工中…';
   $('dimensions').textContent=`${Math.round(crop?.width??image.width)} × ${Math.round(crop?.height??image.height)} px${crop?' ・トリミング適用':' ・元解像度'}`;
   try{const blob=await exportImage(image,{...parameters},intensity,type,quality,crop?{...crop}:null);if(token!==exportToken||version!==revision||!$('export-sheet').open)return;prepared={...shareableFile(blob),revision:version};downloadUrl=URL.createObjectURL(blob);$('download').href=downloadUrl;$('download').download=prepared.file.name;$('share-save').textContent=prepared.supported?'設定を確定して共有':'設定を確定して保存';$('share-save').disabled=false;$('export-status').textContent='加工完了。下のボタンから保存してください。';}
@@ -163,7 +207,7 @@ $('share-save').addEventListener('click',()=>{
 
 $('download').addEventListener('click',()=>status('ダウンロード先または画像表示後の共有メニューを確認してください。'));
 document.querySelector('.open-photo').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('photo').click();}});
-window.addEventListener('pagehide',e=>{gestures.cancel();if(!e.persisted){renderer.clear();if(downloadUrl)URL.revokeObjectURL(downloadUrl);}});
+window.addEventListener('pagehide',e=>{gestures.cancel();media.playback?.pause();if(!e.persisted){media.playback?.dispose();media.video?.release();renderer.clear();if(downloadUrl)URL.revokeObjectURL(downloadUrl);}});
 if('serviceWorker' in navigator&&(location.protocol==='https:'||['localhost','127.0.0.1'].includes(location.hostname)))navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(registration=>registration.update().catch(()=>{})).catch(()=>status('オフライン準備に失敗しました。接続中は利用できます。'));
 
 debug?.info('app initialized; required DOM references resolved');

@@ -1,6 +1,6 @@
-import {processFrame} from './effects.js?v=20261004-5';
-import {cropFrame} from './crop.js?v=20261004-5';
-import {incomingLens} from './lens.js?v=20261004-5';
+import {processFrame} from './effects.js?v=20261018-1';
+import {cropFrame} from './crop.js?v=20261018-1';
+import {incomingLens} from './lens.js?v=20261018-1';
 export class Renderer {
   constructor(canvas,onDraw){if(!(canvas instanceof HTMLCanvasElement))throw new Error('Renderer: preview canvas DOM reference is invalid');this.canvas=canvas;this.onDraw=onDraw;this.request=0;this.pending=null;this.base=null;this.baseKey='';}
   initializePreview(image,debug){
@@ -25,7 +25,8 @@ export class Renderer {
       this.drawCount=(this.drawCount||0)+1;
       this.request=0;const job=this.pending;this.pending=null;let result,cropped,baseCrop;
       try{
-        const scale=Math.min(1,800/Math.max(job.image.width,job.image.height));
+        const video=job.image.source instanceof HTMLVideoElement;
+        const scale=Math.min(1,(video?640:800)/Math.max(job.image.width,job.image.height));
         const w=Math.max(1,Math.round(job.image.width*scale)),h=Math.max(1,Math.round(job.image.height*scale));
         result=processFrame(job.image.source,w,h,job.parameters,job.image.seed,job.before?0:job.intensity);
         cropped=job.crop?cropFrame(result,job.image.width,job.image.height,job.crop,800):null;
@@ -35,7 +36,7 @@ export class Renderer {
         const ctx=this.canvas.getContext('2d');ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
         if(job.transition&&!job.before){
           const key=JSON.stringify([job.image.seed,w,h,job.transition.outside,job.intensity]);
-          if(key!==this.baseKey){if(this.base)this.base.width=this.base.height=0;this.base=processFrame(job.image.source,w,h,job.transition.outside,job.image.seed,job.intensity);this.baseKey=key;}
+          if(video||key!==this.baseKey){if(this.base)this.base.width=this.base.height=0;this.base=processFrame(job.image.source,w,h,job.transition.outside,job.image.seed,job.intensity);this.baseKey=key;}
           baseCrop=job.crop?cropFrame(this.base,job.image.width,job.image.height,job.crop,800):null;
           ctx.drawImage(baseCrop||this.base,0,0);const circle=incomingLens(frame.width,frame.height,job.transition.progress,job.transition.direction);
           ctx.save();ctx.beginPath();ctx.arc(circle.x,circle.y,circle.radius,0,Math.PI*2);ctx.clip();ctx.clearRect(0,0,frame.width,frame.height);ctx.drawImage(frame,0,0);ctx.restore();
