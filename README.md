@@ -10,7 +10,7 @@ iPhoneの写真を端末内でレトロ調に加工する静止画PWA。外部�
 
 ### Service Workerと開発中の更新
 
-現在のキャッシュ名は `retro-film-cache-v9` です。インストール時はHTML・CSS・全JS・manifest・アイコンをHTTPキャッシュに頼らず取得し、アプリの全ファイルの取得成功後に新Workerを待機させず有効化します。activateでこのアプリの旧 `retro-film-*` キャッシュ（旧 `retro-film-v4` などを含む）を削除し、他アプリのキャッシュは削除しません。
+現在のキャッシュ名は `retro-film-cache-v11` です。インストール時はHTML・CSS・全JS・manifest・アイコンをHTTPキャッシュに頼らず取得し、アプリの全ファイルの取得成功後に新Workerを待機させず有効化します。activateでこのアプリの旧 `retro-film-*` キャッシュ（旧 `retro-film-v4` などを含む）を削除し、他アプリのキャッシュは削除しません。
 
 アプリのHTML・CSS・JSなどは **network-first** です。オンラインで開き直すとネットワーク優先で最新ファイルを取得して現行キャッシュへ保存し、通信失敗または3.5秒のタイムアウト時は現行キャッシュでオフライン起動します。旧キャッシュを横断検索しません。開発中にファイルを変更した場合も、再読込で最新内容を取り込みます。新しいバージョンを公開する時は引き続きキャッシュ名を更新してください。
 
@@ -227,7 +227,7 @@ git push -u origin main
 
 本番パスはすべて相対指定です。manifestのstart_url/scopeは `./`、standalone表示。Worker登録URLは `./sw.js`、デフォルトscopeはその配置ディレクトリなので `/retro-film-app/` のみを担当します。キャッシュリストはregistration.scopeに対して解決します。
 
-公開版キャッシュはretro-film-cache-v9。installで全19ファイルを取得し、activateで旧retro-film-*キャッシュを削除します。HTML/CSS/JSはnetwork-first、失敗・タイムアウト時に現行キャッシュへfallback。updateViaCache:none、起動時のupdate確認を維持します。CSS/JSと内部importのvパラメータも維持します。更新時にはcache版と必要に応じv値を更新し、一式pushしてください。オンライン再読込が必要で、自動再読込はしません。
+公開版キャッシュはretro-film-cache-v11。installで全19ファイルを取得し、activateで旧retro-film-*キャッシュを削除します。HTML/CSS/JSはnetwork-first、失敗・タイムアウト時に現行キャッシュへfallback。updateViaCache:none、起動時のupdate確認を維持します。CSS/JSと内部importのvパラメータも維持します。更新時にはcache版と必要に応じv値を更新し、一式pushしてください。オンライン再読込が必要で、自動再読込はしません。
 
 GitHub Pagesではdev-server.pyのno-storeヘッダーは使用しません。Pythonをサーバー上で実行する必要はありません。同一github.io originの別Retro Film配置は旧キャッシュprefix削除対象を共有するため、オフライン運用では公開先を1つに揃えてください。
 
@@ -254,5 +254,5 @@ Web ShareはHTTPSとユーザー操作を必要とします。canShareは生成�
 
 すべて端末内処理です。動画をアップロード・自動保存・Service Workerキャッシュへ保存しません。オンラインでアプリを準備した後は、端末内で利用可能な動画をオフラインで選べます。動画ファイルはページ終了後に再選択します。
 
-実装構造、Phase別検証結果、iPhone実機チェックリストは[VIDEO-PHASES.md](VIDEO-PHASES.md)に記載しています。現在の配信版は `?v=20261018-1`、Workerはv9・19アセットです。既存のGitHub Pagesサブパスと相対importを維持しています。公開先へのpushはこの変更では実施していません。
+実装構造、Phase別検証結果、iPhone実機チェックリストは[VIDEO-PHASES.md](VIDEO-PHASES.md)に記載しています。現在の配信版は `?v=20261018-1`、Workerはv11・19アセットです。既存のGitHub Pagesサブパスと相対importを維持しています。公開先へのpushはこの変更では実施していません。
 

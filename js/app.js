@@ -36,11 +36,32 @@ function layout(){
   if(transition){const c=incomingLens(width,height,transition.progress,transition.direction);$('lens').style.width=$('lens').style.height=`${c.radius*2}px`;$('lens').style.transform=`translate(${c.x-c.radius}px,${c.y-c.radius}px)`;}
 }
 new ResizeObserver(layout).observe(stage);
+let toastPositionFrame=0;
+function positionVideoToast(){
+  const toast=$('preset-toast');
+  if(media.type!=='video'){toast.style.removeProperty('top');return;}
+  const controls=$('video-controls'),controlsRect=controls.getBoundingClientRect(),stageRect=stage.getBoundingClientRect(),videoRect=view.getBoundingClientRect();
+  const valid=!controls.hidden&&controlsRect.width>0&&controlsRect.height>0;
+  // Viewport coordinates throughout: use the visible lower part of the image,
+  // but keep the entire toast above the measured controls, not their center.
+  const imageBottom=Math.min(stageRect.bottom,videoRect.bottom);
+  const targetBottom=valid?Math.min(controlsRect.top-40,imageBottom-32):imageBottom-100;
+  const scaleY=stage.offsetHeight?stageRect.height/stage.offsetHeight:1;
+  let top=(targetBottom-stageRect.top)/scaleY-stage.clientTop-toast.offsetHeight;
+  toast.style.top=`${top}px`;
+  // Verify the final rendered edge, including padding, line-height and transforms.
+  const correction=targetBottom-toast.getBoundingClientRect().bottom;
+  if(Math.abs(correction)>.25){top+=correction/scaleY;toast.style.top=`${top}px`;}
+}
+function trackToastPosition(){
+  cancelAnimationFrame(toastPositionFrame);positionVideoToast();
+  if(media.type==='video'&&($('preset-toast').classList.contains('visible')||Number(getComputedStyle($('preset-toast')).opacity)>0))toastPositionFrame=requestAnimationFrame(trackToastPosition);
+}
 function resetView(){zoom=1;pan={x:0,y:0};layout();}
 function refreshSliders(){for(const [key,{input,output}] of sliders){input.value=parameters[key];output.value=parameters[key].toFixed(2);}}
 function clearDownload(){if(downloadUrl)URL.revokeObjectURL(downloadUrl);downloadUrl=null;prepared=null;$('download').hidden=true;exportToken++;$('share-save').disabled=true;}
 function changed(){revision++;clearDownload();}
-function showName(){clearTimeout(toastTimer);$('preset-toast').textContent=presets[index].name;$('preset-toast').classList.add('visible');toastTimer=setTimeout(()=>$('preset-toast').classList.remove('visible'),1100);}
+function showName(){clearTimeout(toastTimer);$('preset-toast').textContent=presets[index].name;$('preset-toast').classList.add('visible');trackToastPosition();toastTimer=setTimeout(()=>$('preset-toast').classList.remove('visible'),1100);}
 function setBusy(value){busy=value;$('photo').disabled=value;for(const id of ['adjust-button','crop-button','compare-button','export-button'])$(id).disabled=value||!image||!displayReady||(media.type==='video'&&['crop-button','export-button'].includes(id));for(const id of ['video-play','video-seek'])$(id).disabled=value||media.type!=='video';}
 function sheetOpen(){return [...document.querySelectorAll('dialog')].some(d=>d.open);}
 function setBefore(value){before=value;$('compare-button').setAttribute('aria-pressed',String(value));$('compare-label').hidden=!value;render();}

@@ -52,3 +52,17 @@ Edgeの390×844タッチエミュレーションで確認。合成動画は160×
 7. 初回オンラインキャッシュ後に機内モードで起動し、端末内の動画を選び再生/加工する。iCloudだけにある未ダウンロード動画のオフライン取得はアプリでは保証できない。
 
 実機成功を確認するまではPhase 3/4へ進めません。動画保存・共有はまだ操作できず、写真のJPEG/PNG保存と共有は従来どおりです。
+
+## プリセット名と動画コントロールの重なり修正
+
+両方がstage下端基準で、toast bottom:26pxとcontrols bottom:8pxの表示領域が重なっていた。動画モードだけcontrolsの実測高さをResizeObserverでCSS変数へ渡し、toast下端をcontrols上端から24px上へ配置。stageは既存mainのSafe Area内にあり、その配置を維持。toast z-index:3、controls:4、ボトムシートはdialogのtop layer。写真のbottom:26px・1100ms後のフェード・pointer-events:noneは維持した。
+
+tests/video-toast.cjsで縦横動画とも余白24px、再生/停止/シーク、フェード、写真位置を検証。video/image-loading/pagesの既存試験も成功。tests/video-toast.pngは390×844のEdgeタッチエミュレーションで、実機キャプチャではない。CSSとappエントリーURLの版を20261018-2、Worker cacheをv10へ更新。加工・再生・gestureロジック変更なし。
+
+## 実矩形に基づくtoast安全領域（2026-10-19）
+
+前回はcontrols高さとCSS bottom:8pxからtoast bottomを逆算していた。iPhoneでは重複が残ったという実機報告があり、実機の座標ログはないためSafari側の単独原因は断定しない。今回はtoastとcontrols双方のgetBoundingClientRectを使う方式に置き換えた。
+
+targetBottom=min(controlsRect.top-40,表示映像下端-32)とし、toastのoffsetHeightを差し引いてstage内top座標へ変換。設定後に実際のtoastRect.bottomも取得して差分補正する。親座標のscale・borderも考慮する。controlsが未表示/ゼロ寸法なら映像の見える下端から100px上をfallback下端とする。表示中とフェード中だけrAFで再確認する。写真時はtop指定を除き、従来bottom:26pxを維持。動画/写真の描画・再生・フィルター・gestureコードは変更しない。
+
+390×844・約12秒の合成縦横動画でplay/pause/seek/シークpointer保持を検証。縦はgap40px、横は映像内配置を優先してgap218.3125px。controlsを移動/拡大する局所試験でも16px以上を維持。スクリーンショットtests/video-toast.pngはEdgeのエミュレーション。実機確認は未実施。配信入口/CSSは20261019-1、Worker cacheはv11へ更新。

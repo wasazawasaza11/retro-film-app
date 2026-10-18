@@ -15,3 +15,6 @@
 .video-decoder{position:fixed;left:0;top:0;width:1px;height:1px;opacity:.001;pointer-events:none}
 #video-controls{position:absolute;left:12px;right:12px;bottom:8px;z-index:4;display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:10px;background:#141414d9;touch-action:auto}
 #video-controls button{padding:4px 8px;font-size:12px}#video-controls input{flex:1;min-width:0;width:auto}#video-time{font-size:10px;white-space:nowrap}
+#preset-toast{z-index:3}
+#stage[data-media-type="video"] #preset-toast{bottom:auto;top:calc(100% - 100px);max-width:calc(100% - 32px)}
+#stage:not([data-media-type="video"]) #preset-toast{top:auto!important}
