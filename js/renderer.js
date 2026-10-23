@@ -1,7 +1,7 @@
-import {processFrame} from './effects.js?v=20261024-4';
-import {cropFrame} from './crop.js?v=20261024-4';
-import {incomingLens} from './lens.js?v=20261024-4';
-import {VideoEffectAnalyzer,videoEffectState} from './video-effects.js?v=20261024-4';
+import {processFrame} from './effects.js?v=20261024-5';
+import {cropFrame} from './crop.js?v=20261024-5';
+import {incomingLens} from './lens.js?v=20261024-5';
+import {VideoEffectAnalyzer,videoEffectState} from './video-effects.js?v=20261024-5';
 export class Renderer {
   constructor(canvas,onDraw){if(!(canvas instanceof HTMLCanvasElement))throw new Error('Renderer: preview canvas DOM reference is invalid');this.canvas=canvas;this.onDraw=onDraw;this.request=0;this.pending=null;this.base=null;this.baseKey='';}
   initializePreview(image,debug){
@@ -19,9 +19,9 @@ export class Renderer {
     }catch(error){debug?.error(operation,error);throw error;}
   }
   clear(){cancelAnimationFrame(this.request);this.request=0;this.pending=null;if(this.base)this.base.width=this.base.height=0;this.base=null;this.baseKey='';this.videoAnalyzer?.dispose();this.videoAnalyzer=null;}
-  schedule(image,parameters,intensity,onError,{crop=null,transition=null,before=false,onComplete=null}={}){
+  schedule(image,parameters,intensity,onError,{crop=null,transition=null,before=false,onComplete=null,handheld=0}={}){
     if(!image?.source||!image.width||!image.height)return;
-    this.pending={image,parameters:{...parameters},intensity,onError,crop:crop?{...crop}:null,transition,before,onComplete};if(this.request)return;
+    this.pending={image,parameters:{...parameters,handheld},intensity,onError,crop:crop?{...crop}:null,transition,before,onComplete};if(this.request)return;
     this.request=requestAnimationFrame(()=>{
       this.drawCount=(this.drawCount||0)+1;
       this.request=0;const job=this.pending;this.pending=null;let result,cropped,baseCrop;
@@ -39,7 +39,7 @@ export class Renderer {
         const ctx=this.canvas.getContext('2d');ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
         if(job.transition&&!job.before){
           const key=JSON.stringify([job.image.seed,w,h,job.transition.outside,job.intensity]);
-          if(video||key!==this.baseKey){if(this.base)this.base.width=this.base.height=0;this.base=processFrame(job.image.source,w,h,job.transition.outside,job.image.seed,job.intensity,temporal);this.baseKey=key;}
+          if(video||key!==this.baseKey){if(this.base)this.base.width=this.base.height=0;this.base=processFrame(job.image.source,w,h,{...job.transition.outside,handheld:job.parameters.handheld},job.image.seed,job.intensity,temporal);this.baseKey=key;}
           baseCrop=job.crop?cropFrame(this.base,job.image.width,job.image.height,job.crop,800):null;
           ctx.drawImage(baseCrop||this.base,0,0);const circle=incomingLens(frame.width,frame.height,job.transition.progress,job.transition.direction);
           ctx.save();ctx.beginPath();ctx.arc(circle.x,circle.y,circle.radius,0,Math.PI*2);ctx.clip();ctx.clearRect(0,0,frame.width,frame.height);ctx.drawImage(frame,0,0);ctx.restore();

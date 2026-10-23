@@ -3,7 +3,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
 (async()=>{const browser=await chromium.launch({headless:true,channel:'msedge'});try{
  const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('http://127.0.0.1:8087/');
  const result=await page.evaluate(async()=>{
-  const M=await import('./vendor/mediabunny/mediabunny.min.mjs');const E=await import('./js/video-export.js?v=20261024-4');const {processFrame}=await import('./js/effects.js?v=20261024-4');const {presets}=await import('./js/presets.js?v=20261024-4');
+  const M=await import('./vendor/mediabunny/mediabunny.min.mjs');const E=await import('./js/video-export.js?v=20261024-5');const {processFrame}=await import('./js/effects.js?v=20261024-5');const {presets}=await import('./js/presets.js?v=20261024-5');
   const active=new Set();for(const name of ['VideoEncoder','VideoDecoder','AudioEncoder','AudioDecoder']){const proto=globalThis[name].prototype,configure=proto.configure,close=proto.close;proto.configure=function(...args){const v=configure.apply(this,args);active.add(this);return v;};proto.close=function(...args){try{return close.apply(this,args);}finally{active.delete(this);}};}
   async function fixture(audio,rotation=0,codec='aac',width=160,height=240){
    const c=document.createElement('canvas');c.width=width;c.height=height;const ctx=c.getContext('2d');const out=new M.Output({format:new M.Mp4OutputFormat(),target:new M.BufferTarget()});
@@ -23,11 +23,11 @@ const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
   const rotationFile=await fixture(false,90),rotated=await E.exportVideo({file:rotationFile,parameters:presets[0].values,intensity:0,seed:1});const rotation=await metadata(rotated.file);
   const controller=new AbortController();let cancelled=false;
   try{await E.exportVideo({file:exportFixture,parameters:presets[4].values,intensity:1,seed:123,signal:controller.signal,onProgress:p=>{if(p>.05)controller.abort();}});}catch(error){cancelled=error.name==='AbortError';}
-  const retried=await E.exportVideo({file:exportFixture,parameters:{...presets[4].values,exposure:.6},intensity:.8,seed:123});
+  const retried=await E.exportVideo({file:exportFixture,parameters:{...presets[4].values,exposure:.6,handheld:.7},intensity:.8,seed:123});
   const retry=await metadata(retried.file);
   const opus=await fixture(true,0,'opus'),transcoded=await E.exportVideo({file:opus,parameters:presets[0].values,intensity:.7,seed:123});const transcode=await metadata(transcoded.file);
   await new Promise(r=>setTimeout(r,100));
-  const {exportDimensions}=await import('./js/video-capabilities.js?v=20261024-4');
+  const {exportDimensions}=await import('./js/video-capabilities.js?v=20261024-5');
   const dimensions=[exportDimensions(3840,2160,'1080'),exportDimensions(2160,3840,'720'),exportDimensions(400,600,'720')];
   const full=await fixture(false,0,'aac',1080,1920),highResolution=[];
   for(const resolution of ['1080','720']){const encoded=await E.exportVideo({file:full,parameters:presets[4].values,intensity:.7,seed:321,resolution});const info=await metadata(encoded.file);highResolution.push({width:info.w,height:info.h,duration:info.duration});}

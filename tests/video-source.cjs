@@ -14,7 +14,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
  for(const [name,type] of [['video.mp4','video/mp4'],['video.mov','video/quicktime']]){
   const input=fs.readFileSync(path.join(__dirname,'fixtures',name));
   const result=await page.evaluate(async({bytes,type})=>{
-    const {loadVideo,VideoPlayback}=await import('./js/video-source.js?v=20261024-4');const media=await loadVideo(new File([new Uint8Array(bytes)],'test',{type}));const events=[];let frames=0;
+    const {loadVideo,VideoPlayback}=await import('./js/video-source.js?v=20261024-5');const media=await loadVideo(new File([new Uint8Array(bytes)],'test',{type}));const events=[];let frames=0;
     const playback=new VideoPlayback(media,()=>frames++,()=>{},e=>events.push(e.message));await playback.play();await new Promise(r=>setTimeout(r,350));playback.pause();const time=media.source.currentTime;playback.seek(1);await new Promise(r=>media.source.addEventListener('seeked',r,{once:true}));const result={w:media.width,h:media.height,duration:media.duration,time,seek:media.source.currentTime,frames,events,method:playback.method};playback.dispose();media.release();result.removed=!document.querySelector('.video-decoder');return result;
   },{bytes:[...input],type});assert.equal(result.w,160);assert.equal(result.h,240);assert.ok(result.duration>1&&result.time>0&&result.frames>0);assert.equal(result.seek,1);assert.deepEqual(result.events,[]);assert.ok(result.removed);console.log('PHASE 1 PASS',name,result);
  }

@@ -1,4 +1,4 @@
-import {capabilityReport} from './video-capabilities.js?v=20261024-4';
+import {capabilityReport} from './video-capabilities.js?v=20261024-5';
 const time=value=>`${Math.floor(value/60)}:${String(Math.floor(value%60)).padStart(2,'0')}`;
 export class VideoExportUI{
   constructor({getSnapshot,lock,debug}){
@@ -24,7 +24,7 @@ export class VideoExportUI{
     const generation=++this.generation;this.$('video-export-start').disabled=true;this.message('書き出し機能を確認中…');
     try{
       const base=await capabilityReport();if(generation!==this.generation)return;this.report(base);
-      const {inspectVideoExport}=await import('./video-export.js?v=20261024-4');
+      const {inspectVideoExport}=await import('./video-export.js?v=20261024-5');
       const snapshot=this.getSnapshot();const report=await inspectVideoExport(snapshot.file,this.$('video-export-resolution').value,this.$('video-export-fps').value,this.$('video-export-audio').value);
       if(generation!==this.generation||!this.dialog.open)return;
       const work=report.output.width*report.output.height*report.output.frameRate/(report.input.width*report.input.height*report.input.frameRate);
@@ -40,7 +40,7 @@ export class VideoExportUI{
     this.clearResult();this.controller=new AbortController();const signal=this.controller.signal;
     this.lock(true);this.setProcessing(true);this.$('video-export-progress').value=0;this.message('動画を書き出しています 0%');
     try{
-      const {exportVideo}=await import('./video-export.js?v=20261024-4');
+      const {exportVideo}=await import('./video-export.js?v=20261024-5');
       const result=await exportVideo({...snapshot,resolution:this.$('video-export-resolution').value,quality:this.$('video-export-quality').value,fpsLimit:this.$('video-export-fps').value,audioMode:this.$('video-export-audio').value,signal,
         onReport:report=>this.report(report),onProgress:(progress,current,total)=>{this.$('video-export-progress').value=progress;this.message(`動画を書き出しています ${Math.floor(progress*100)}%　${time(current)} / ${time(total)}`);}});
       if(signal.aborted||generation!==this.generation)return;

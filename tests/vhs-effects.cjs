@@ -3,10 +3,10 @@ const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
 (async()=>{const b=await chromium.launch({headless:true,channel:'msedge'});try{
  const p=await b.newPage();const errors=[];p.on('pageerror',e=>errors.push(e.message));await p.goto('http://127.0.0.1:8087/');
  const r=await p.evaluate(async()=>{
-  const {processFrame}=await import('./js/effects.js?v=20261024-4');
-  const {presets,interpolate}=await import('./js/presets.js?v=20261024-4');
-  const {videoEffectState}=await import('./js/video-effects.js?v=20261024-4');
-  const {AdjustmentStore,storageKey}=await import('./js/adjustment-store.js?v=20261024-4');
+  const {processFrame}=await import('./js/effects.js?v=20261024-5');
+  const {presets,interpolate}=await import('./js/presets.js?v=20261024-5');
+  const {videoEffectState}=await import('./js/video-effects.js?v=20261024-5');
+  const {AdjustmentStore,storageKey}=await import('./js/adjustment-store.js?v=20261024-5');
   const c=document.createElement('canvas');c.width=320;c.height=240;const ctx=c.getContext('2d');ctx.fillStyle='#333333';ctx.fillRect(0,0,160,240);ctx.fillStyle='#cccccc';ctx.fillRect(160,0,160,240);
   const scene={brightness:.5,brightnessChange:0,motion:0,motionX:0,motionY:0};
   const t=videoEffectState(17,1,scene),next={...t,tapeSeed:videoEffectState(17,1.05,scene).tapeSeed};
