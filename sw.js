@@ -1,6 +1,6 @@
-const CACHE='retro-film-cache-v12';
+const CACHE='retro-film-cache-v13';
 const PREFIX='retro-film-';
-const FILES=['./','./index.html','./css/style.css','./js/debug-panel.js','./js/app.js','./js/video-capabilities.js','./js/video-export.js','./js/video-export-ui.js','./vendor/mediabunny/mediabunny.min.mjs','./js/video-source.js','./js/adjustment-store.js','./js/image-loader.js','./js/renderer.js','./js/effects.js','./js/presets.js','./js/photo-gestures.js','./js/lens.js','./js/crop.js','./js/exporter.js','./manifest.webmanifest','./assets/icons/icon.svg','./assets/icons/icon-192.png','./assets/icons/icon-512.png'];
+const FILES=['./','./index.html','./css/style.css','./js/debug-panel.js','./js/app.js','./js/video-capabilities.js','./js/video-export.js','./js/video-export-ui.js','./vendor/mediabunny/mediabunny.min.mjs','./js/video-source.js','./js/adjustment-store.js','./js/image-loader.js','./js/renderer.js','./js/video-effects.js','./js/effects.js','./js/presets.js','./js/photo-gestures.js','./js/lens.js','./js/crop.js','./js/exporter.js','./manifest.webmanifest','./assets/icons/icon.svg','./assets/icons/icon-192.png','./assets/icons/icon-512.png'];
 const APP_URLS=new Set(FILES.map(file=>new URL(file,self.registration.scope).href));
 const WORKER_URL=new URL('./sw.js',self.registration.scope).href;
 

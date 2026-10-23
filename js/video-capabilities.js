@@ -1,9 +1,13 @@
 const mimeCandidates=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4;codecs=avc1.640028,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm'];
 export function exportDimensions(width,height,resolution){
-  const edge=resolution==='original'?Infinity:resolution==='1080'?1920:1280;
+  const edge=({original:Infinity,'1080':1920,'720':1280,'480':854,'360':640,'240':426})[resolution]??1280;
   const factor=Math.min(1,edge/Math.max(width,height));
   // H.264 4:2:0 requires even dimensions. Never upscale a smaller input.
   return {width:Math.max(2,Math.floor(width*factor/2)*2),height:Math.max(2,Math.floor(height*factor/2)*2)};
+}
+export function exportFrameRate(sourceRate,limit='source'){
+  const rate=Number.isFinite(sourceRate)&&sourceRate>0?sourceRate:30;
+  return Math.min(rate,60,limit==='source'?60:Math.max(1,Number(limit)||30));
 }
 export async function capabilityReport(width=720,height=1280,frameRate=30){
   const report={secureContext:globalThis.isSecureContext};

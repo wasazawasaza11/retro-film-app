@@ -1,4 +1,4 @@
-import {capabilityReport} from './video-capabilities.js?v=20261019-2';
+import {capabilityReport} from './video-capabilities.js?v=20261024-1';
 const time=value=>`${Math.floor(value/60)}:${String(Math.floor(value%60)).padStart(2,'0')}`;
 export class VideoExportUI{
   constructor({getSnapshot,lock,debug}){
@@ -10,7 +10,8 @@ export class VideoExportUI{
     this.$('video-export-start').addEventListener('click',()=>this.start());
     this.$('video-export-cancel').addEventListener('click',()=>{this.controller?.abort();this.message('キャンセル処理中…');});
     this.$('video-export-share').addEventListener('click',()=>this.share());
-    for(const id of ['video-export-resolution','video-export-quality'])this.$(id).addEventListener('change',()=>{this.clearResult();this.inspect();});
+    for(const id of ['video-export-resolution','video-export-quality','video-export-fps'])this.$(id).addEventListener('change',()=>{this.clearResult();this.inspect();});
+    this.$('video-export-vhs').addEventListener('click',()=>{if(this.controller)return;this.$('video-export-resolution').value='480';this.$('video-export-fps').value='15';this.$('video-export-quality').value='compact';this.clearResult();this.inspect();});
     this.dialog.addEventListener('cancel',event=>{if(this.controller)event.preventDefault();});
     this.dialog.addEventListener('close',()=>{this.generation++;this.clearResult();});
     window.addEventListener('pagehide',()=>{this.controller?.abort();this.clearResult();});
@@ -23,10 +24,11 @@ export class VideoExportUI{
     const generation=++this.generation;this.$('video-export-start').disabled=true;this.message('書き出し機能を確認中…');
     try{
       const base=await capabilityReport();if(generation!==this.generation)return;this.report(base);
-      const {inspectVideoExport}=await import('./video-export.js?v=20261019-2');
-      const snapshot=this.getSnapshot();const report=await inspectVideoExport(snapshot.file,this.$('video-export-resolution').value);
+      const {inspectVideoExport}=await import('./video-export.js?v=20261024-1');
+      const snapshot=this.getSnapshot();const report=await inspectVideoExport(snapshot.file,this.$('video-export-resolution').value,this.$('video-export-fps').value);
       if(generation!==this.generation||!this.dialog.open)return;
-      this.report(report);this.$('video-export-info').textContent=`MP4 / H.264・${report.input.hasAudio?'元音声を保持（AAC）':'元動画は音声なし'} / ${report.output.width}×${report.output.height} / ${report.output.frameRate.toFixed(2)}fps`;
+      const work=report.output.width*report.output.height*report.output.frameRate/(report.input.width*report.input.height*report.input.frameRate);
+      this.report(report);this.$('video-export-info').textContent=`MP4 / H.264・${report.input.hasAudio?'元音声を保持（AAC）':'元動画は音声なし'} / ${report.output.width}×${report.output.height} / ${report.output.frameRate.toFixed(2)}fps（画素×fps：約${Math.round(work*100)}%）`;
       const capable=report.h264Encoder&&report.input.canDecode&&report.VideoEncoder&&report.VideoDecoder;
       this.$('video-export-start').disabled=!capable;
       this.message(!capable?'この環境は必要なH.264エンコードまたは入力デコードに非対応です。能力レポートを確認してください。':report.input.width*report.input.height>1920*1080||report.input.duration>60?'高解像度または長い動画は、書き出し時間とメモリが増えます。1080p以下・60秒程度を推奨します。':'設定を確認して「MP4を生成」を押してください。');
@@ -38,8 +40,8 @@ export class VideoExportUI{
     this.clearResult();this.controller=new AbortController();const signal=this.controller.signal;
     this.lock(true);this.setProcessing(true);this.$('video-export-progress').value=0;this.message('動画を書き出しています 0%');
     try{
-      const {exportVideo}=await import('./video-export.js?v=20261019-2');
-      const result=await exportVideo({...snapshot,resolution:this.$('video-export-resolution').value,quality:this.$('video-export-quality').value,signal,
+      const {exportVideo}=await import('./video-export.js?v=20261024-1');
+      const result=await exportVideo({...snapshot,resolution:this.$('video-export-resolution').value,quality:this.$('video-export-quality').value,fpsLimit:this.$('video-export-fps').value,signal,
         onReport:report=>this.report(report),onProgress:(progress,current,total)=>{this.$('video-export-progress').value=progress;this.message(`動画を書き出しています ${Math.floor(progress*100)}%　${time(current)} / ${time(total)}`);}});
       if(signal.aborted||generation!==this.generation)return;
       this.result=result.file;this.url=URL.createObjectURL(result.file);this.$('video-export-download').href=this.url;this.$('video-export-download').download=result.file.name;
@@ -48,7 +50,7 @@ export class VideoExportUI{
     finally{this.controller=null;this.setProcessing(false);this.lock(false);}
   }
   setProcessing(active){
-    for(const id of ['video-export-resolution','video-export-quality','video-export-start'])this.$(id).disabled=active;
+    for(const id of ['video-export-resolution','video-export-quality','video-export-fps','video-export-vhs','video-export-start'])this.$(id).disabled=active;
     this.dialog.querySelector('.close-sheet').disabled=active;this.$('video-export-cancel').hidden=!active;this.$('video-export-progress').hidden=!active;
   }
   share(){
