@@ -1,4 +1,4 @@
-import {randomFromSeed} from './effects.js?v=20261024-1';
+import {randomFromSeed} from './effects.js?v=20261024-2';
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 const noise=(seed,slot)=>randomFromSeed((seed^Math.imul(slot+1,1640531527))>>>0)();
 function drift(seed,time){const i=Math.floor(time),u=time-i,s=u*u*(3-2*u);return noise(seed,i)*(1-s)+noise(seed,i+1)*s;}
