@@ -1,8 +1,8 @@
-import {audioPresets,RetroAudioProcessor} from './retro-audio.js?v=20261024-3';
+import {audioPresets,RetroAudioProcessor} from './retro-audio.js?v=20261024-4';
 import {Input,BlobSource,ALL_FORMATS,Output,Mp4OutputFormat,BufferTarget,Conversion,Quality,AudioSample,canEncodeAudio} from '../vendor/mediabunny/mediabunny.min.mjs';
-import {processFrame} from './effects.js?v=20261024-3';
-import {capabilityReport,exportDimensions,exportFrameRate} from './video-capabilities.js?v=20261024-3';
-import {VideoEffectAnalyzer,videoEffectState} from './video-effects.js?v=20261024-3';
+import {processFrame} from './effects.js?v=20261024-4';
+import {capabilityReport,exportDimensions,exportFrameRate} from './video-capabilities.js?v=20261024-4';
+import {VideoEffectAnalyzer,videoEffectState} from './video-effects.js?v=20261024-4';
 
 const aborted=signal=>{if(signal?.aborted)throw new DOMException('書き出しをキャンセルしました。','AbortError');};
 export async function inspectVideoExport(file,resolution='1080',fpsLimit='source',audioMode='original'){

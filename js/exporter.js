@@ -1,5 +1,5 @@
-import {processFrame} from './effects.js?v=20261024-3';
-import {cropFrame} from './crop.js?v=20261024-3';
+import {processFrame} from './effects.js?v=20261024-4';
+import {cropFrame} from './crop.js?v=20261024-4';
 export async function exportImage(image,parameters,intensity,type,quality,crop=null){
   await new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,0)));
   let canvas,cropped;
