@@ -1,7 +1,7 @@
-import {processFrame} from './effects.js?v=20261024-2';
-import {cropFrame} from './crop.js?v=20261024-2';
-import {incomingLens} from './lens.js?v=20261024-2';
-import {VideoEffectAnalyzer,videoEffectState} from './video-effects.js?v=20261024-2';
+import {processFrame} from './effects.js?v=20261024-3';
+import {cropFrame} from './crop.js?v=20261024-3';
+import {incomingLens} from './lens.js?v=20261024-3';
+import {VideoEffectAnalyzer,videoEffectState} from './video-effects.js?v=20261024-3';
 export class Renderer {
   constructor(canvas,onDraw){if(!(canvas instanceof HTMLCanvasElement))throw new Error('Renderer: preview canvas DOM reference is invalid');this.canvas=canvas;this.onDraw=onDraw;this.request=0;this.pending=null;this.base=null;this.baseKey='';}
   initializePreview(image,debug){

@@ -1,4 +1,4 @@
-import {createSeed} from './image-loader.js?v=20261024-2';
+import {createSeed} from './image-loader.js?v=20261024-3';
 
 // One local media element and one pending callback; never retain decoded frames.
 export async function loadVideo(file,debug){

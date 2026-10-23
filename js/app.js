@@ -1,13 +1,13 @@
-import {AdjustmentStore} from './adjustment-store.js?v=20261024-2';
-import {loadImage} from './image-loader.js?v=20261024-2';
-import {Renderer} from './renderer.js?v=20261024-2';
-import {presets,fields,interpolate,wrap} from './presets.js?v=20261024-2';
-import {PhotoGestures} from './photo-gestures.js?v=20261024-2';
-import {incomingLens} from './lens.js?v=20261024-2';
-import {createCrop,constrainCrop,setCropRatio,panCrop,setCropAngle} from './crop.js?v=20261024-2';
-import {exportImage,shareableFile} from './exporter.js?v=20261024-2';
-import {loadVideo,VideoPlayback} from './video-source.js?v=20261024-2';
-import {VideoExportUI} from './video-export-ui.js?v=20261024-2';
+import {AdjustmentStore} from './adjustment-store.js?v=20261024-3';
+import {loadImage} from './image-loader.js?v=20261024-3';
+import {Renderer} from './renderer.js?v=20261024-3';
+import {presets,fields,interpolate,wrap} from './presets.js?v=20261024-3';
+import {PhotoGestures} from './photo-gestures.js?v=20261024-3';
+import {incomingLens} from './lens.js?v=20261024-3';
+import {createCrop,constrainCrop,setCropRatio,panCrop,setCropAngle} from './crop.js?v=20261024-3';
+import {exportImage,shareableFile} from './exporter.js?v=20261024-3';
+import {loadVideo,VideoPlayback} from './video-source.js?v=20261024-3';
+import {VideoExportUI} from './video-export-ui.js?v=20261024-3';
 const debug=window.retroDebug; const adjustments=new AdjustmentStore();
 const $=id=>{const element=document.getElementById(id);if(!element){const error=new Error(`Required DOM element #${id} is null`);debug?.error("DOM reference",error);throw error;}return element;},stage=$('stage'),view=$('photo-view');
 let displayReady=false;
@@ -92,7 +92,7 @@ const favorites=document.createElement('div');favorites.className='favorite-cont
 $('adjustments').before(favorites);
 $('reset-preset').addEventListener('click',()=>{adjustments.reset(index);parameters=adjustments.values(index);refreshSliders();changed();render();});
 $('save-favorite').addEventListener('click',()=>{const slot=Number($('favorite-slot').value);if(adjustments.favorites[slot]&&!confirm(`★${slot+1}を上書きしますか？`))return;adjustments.save(slot,index,intensity,parameters);status(`★${slot+1}に保存しました。`);});
-for(const button of favorites.querySelectorAll('[data-favorite]'))button.addEventListener('click',()=>{const f=adjustments.favorites[Number(button.dataset.favorite)];if(!f){status('このお気に入りは未登録です。');return;}settle();index=presets.findIndex(p=>p.name===f.preset);parameters={...f.values};intensity=f.strength;adjustments.update(index,parameters);gestures.reset(index);$('intensity').value=Math.round(intensity*100);$('intensity-value').value=`${Math.round(intensity*100)}%`;refreshSliders();changed();render();showName();});
+for(const button of favorites.querySelectorAll('[data-favorite]'))button.addEventListener('click',()=>{const f=adjustments.favorites[Number(button.dataset.favorite)];if(!f){status('このお気に入りは未登録です。');return;}settle();index=presets.findIndex(p=>p.name===f.preset);parameters={...f.values,vhs:presets[index].values.vhs};intensity=f.strength;adjustments.update(index,parameters);gestures.reset(index);$('intensity').value=Math.round(intensity*100);$('intensity-value').value=`${Math.round(intensity*100)}%`;refreshSliders();changed();render();showName();});
 $('photo').addEventListener('change',async event=>{
   debug?.reset();debug?.step('input change');
   const files=event.target?.files;

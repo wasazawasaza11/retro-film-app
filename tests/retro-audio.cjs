@@ -3,7 +3,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
 (async()=>{const browser=await chromium.launch({headless:true,channel:'msedge'});try{
  const page=await browser.newPage();await page.goto('http://127.0.0.1:8087/');
  const result=await page.evaluate(async()=>{
-  const {RetroAudioProcessor}=await import('./js/retro-audio.js?v=20261024-2');
+  const {RetroAudioProcessor}=await import('./js/retro-audio.js?v=20261024-3');
   const rate=32000,length=rate;
   const signal=frequency=>{const b=new AudioBuffer({length,sampleRate:rate,numberOfChannels:1});const d=b.getChannelData(0);for(let i=0;i<length;i++)d[i]=.3*Math.sin(i/rate*frequency*2*Math.PI);return b;};
   const rms=b=>Math.sqrt(b.getChannelData(0).slice(4000).reduce((s,x)=>s+x*x,0)/(length-4000));

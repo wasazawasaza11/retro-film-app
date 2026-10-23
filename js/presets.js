@@ -1,7 +1,7 @@
 export const fields = [
   ['exposure','露出',-2,2,.05],['contrast','コントラスト',0,2,.02],['saturation','彩度',0,2,.02],['temperature','色温度',-1,1,.02],['fade','フェード',0,1,.01],['grain','粒子',0,1,.01],['vignette','ビネット',0,1,.01],['lightLeak','光漏れ',0,1,.01],['scratches','傷',0,1,.01],['dust','ホコリ',0,1,.01],['rgbShift','RGBずれ',0,1,.01]
 ];
-const preset = (name, tint, values, monochrome=0) => ({name,tint,values:{...Object.fromEntries(fields.map((f,i)=>[f[0],values[i]])),monochrome}});
+const preset = (name, tint, values, monochrome=0) => ({name,tint,values:{...Object.fromEntries(fields.map((f,i)=>[f[0],values[i]])),monochrome,vhs:name==='VHS'?1:0}});
 export const presets = [
   preset('35mm Film','#a38d63',[.1,1.15,.88,.18,.12,.25,.28,.12,.08,.1,.02]),
   preset('Disposable','#7b9266',[.25,1.3,1.1,.3,.08,.48,.55,.35,.1,.2,.08]),
@@ -14,7 +14,7 @@ export const presets = [
 ];
 export const wrap = i => ((i % presets.length) + presets.length) % presets.length;
 export function angleToBlend(position) { const floor=Math.floor(position);return {presetIndex:wrap(floor),nextIndex:wrap(floor+1),blendRatio:position-floor}; }
-export function interpolate(a,b,t){return Object.fromEntries([...fields.map(([key])=>key),'monochrome'].map(key=>[key,(a[key]??0)+((b[key]??0)-(a[key]??0))*t]));}
+export function interpolate(a,b,t){return Object.fromEntries([...fields.map(([key])=>key),'monochrome','vhs'].map(key=>[key,(a[key]??0)+((b[key]??0)-(a[key]??0))*t]));}
 
 
 

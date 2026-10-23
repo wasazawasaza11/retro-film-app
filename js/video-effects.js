@@ -1,4 +1,4 @@
-import {randomFromSeed} from './effects.js?v=20261024-2';
+import {randomFromSeed} from './effects.js?v=20261024-3';
 const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 const noise=(seed,slot)=>randomFromSeed((seed^Math.imul(slot+1,1640531527))>>>0)();
 function drift(seed,time){const i=Math.floor(time),u=time-i,s=u*u*(3-2*u);return noise(seed,i)*(1-s)+noise(seed,i+1)*s;}
@@ -36,6 +36,7 @@ export function videoEffectState(seed,time,scene){
   const t=Math.max(0,Number.isFinite(time)?time:0),motion=scene.motion||0;
   const scratchSlot=Math.floor(t*3),dustSlot=Math.floor(t/1.1);
   return {
+    tapeSeed:(seed^Math.imul(Math.floor(t*30)+1,2246822519))>>>0,
     grainSeed:(seed^Math.imul(Math.floor(t*12)+1,374761393))>>>0,
     scratchSeed:(seed^Math.imul(scratchSlot+1,668265263))>>>0,
     dustSeed:(seed^Math.imul(dustSlot+1,1274126177))>>>0,

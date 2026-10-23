@@ -1,3 +1,4 @@
+import {applyVhs} from './vhs-effects.js?v=20261024-3';
 const clamp=v=>Math.max(0,Math.min(255,v));
 export function randomFromSeed(seed){let s=seed>>>0;return ()=>{s=(s+0x6D2B79F5)>>>0;let t=s;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;};}
 export function applyColorAdjustments(data,p){const gain=2**p.exposure;for(let i=0;i<data.length;i+=4){let r=data[i]*gain,g=data[i+1]*gain,b=data[i+2]*gain;const l=.2126*r+.7152*g+.0722*b;r=l+(r-l)*p.saturation+22*p.temperature;g=l+(g-l)*p.saturation+4*p.temperature;b=l+(b-l)*p.saturation-22*p.temperature;data[i]=clamp(((r-128)*p.contrast+128)*(1-p.fade*.35)+p.fade*34);data[i+1]=clamp(((g-128)*p.contrast+128)*(1-p.fade*.35)+p.fade*31);data[i+2]=clamp(((b-128)*p.contrast+128)*(1-p.fade*.35)+p.fade*28);}}
@@ -16,7 +17,7 @@ export function processFrame(source,w,h,parameters,seed,intensity=1,temporal=nul
   const ctx=canvas.getContext('2d',{willReadFrequently:true});if(!ctx)throw new Error('Canvasを作成できませんでした。');
   ctx.drawImage(source,0,0,w,h);if(intensity<=0)return canvas;
   const p=temporal?{...parameters,exposure:parameters.exposure+temporal.exposureDelta,rgbShift:Math.min(1,parameters.rgbShift*temporal.rgbGain)}:parameters;
-  const image=ctx.getImageData(0,0,w,h),original=intensity<1?new Uint8ClampedArray(image.data):null;applyColorAdjustments(image.data,p);applyRgbShift(image.data,w,h,p.rgbShift);applyGrain(image.data,w,h,p.grain*(temporal?.grainGain??1),temporal?.grainSeed??seed);applyVignette(image.data,w,h,p.vignette);ctx.putImageData(image,0,0);
+  const image=ctx.getImageData(0,0,w,h),original=intensity<1?new Uint8ClampedArray(image.data):null;applyColorAdjustments(image.data,p);applyRgbShift(image.data,w,h,p.rgbShift);applyGrain(image.data,w,h,p.grain*(temporal?.grainGain??1),temporal?.grainSeed??seed);applyVignette(image.data,w,h,p.vignette);if(temporal&&p.vhs)applyVhs(image.data,w,h,p.vhs,temporal.tapeSeed);ctx.putImageData(image,0,0);
   applyLightLeak(ctx,w,h,p.lightLeak*(temporal?.leakGain??1),seed,temporal);
   if(temporal){ctx.save();ctx.translate(temporal.offsetX*w,temporal.offsetY*h);}
   applyScratches(ctx,w,h,p.scratches*(temporal?.scratchGain??1),temporal?.scratchSeed??seed);applyDust(ctx,w,h,p.dust*(temporal?.dustGain??1),temporal?.dustSeed??seed);
