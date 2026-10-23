@@ -18,3 +18,4 @@
 #preset-toast{z-index:3}
 #stage[data-media-type="video"] #preset-toast{bottom:auto;top:calc(100% - 100px);max-width:calc(100% - 32px)}
 #stage:not([data-media-type="video"]) #preset-toast{top:auto!important}
+#video-export-sheet{max-height:48dvh}#video-export-progress{width:100%;height:8px}#video-export-status,#video-export-info{font-size:11px;line-height:1.5}#video-export-diagnostics pre{font-size:10px;white-space:pre-wrap;overflow-wrap:anywhere}#video-export-download{display:block;padding:10px;color:#e8d1a8;text-align:center}

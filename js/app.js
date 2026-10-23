@@ -6,7 +6,8 @@ import {PhotoGestures} from './photo-gestures.js?v=20261018-1';
 import {incomingLens} from './lens.js?v=20261018-1';
 import {createCrop,constrainCrop,setCropRatio,panCrop,setCropAngle} from './crop.js?v=20261018-1';
 import {exportImage,shareableFile} from './exporter.js?v=20261018-1';
-import {loadVideo,VideoPlayback} from './video-source.js?v=20261018-1';
+import {loadVideo,VideoPlayback} from './video-source.js?v=20261019-2';
+import {VideoExportUI} from './video-export-ui.js?v=20261019-2';
 const debug=window.retroDebug; const adjustments=new AdjustmentStore();
 const $=id=>{const element=document.getElementById(id);if(!element){const error=new Error(`Required DOM element #${id} is null`);debug?.error("DOM reference",error);throw error;}return element;},stage=$('stage'),view=$('photo-view');
 let displayReady=false;
@@ -62,7 +63,7 @@ function refreshSliders(){for(const [key,{input,output}] of sliders){input.value
 function clearDownload(){if(downloadUrl)URL.revokeObjectURL(downloadUrl);downloadUrl=null;prepared=null;$('download').hidden=true;exportToken++;$('share-save').disabled=true;}
 function changed(){revision++;clearDownload();}
 function showName(){clearTimeout(toastTimer);$('preset-toast').textContent=presets[index].name;$('preset-toast').classList.add('visible');trackToastPosition();toastTimer=setTimeout(()=>$('preset-toast').classList.remove('visible'),1100);}
-function setBusy(value){busy=value;$('photo').disabled=value;for(const id of ['adjust-button','crop-button','compare-button','export-button'])$(id).disabled=value||!image||!displayReady||(media.type==='video'&&['crop-button','export-button'].includes(id));for(const id of ['video-play','video-seek'])$(id).disabled=value||media.type!=='video';}
+function setBusy(value){busy=value;$('photo').disabled=value;for(const id of ['adjust-button','crop-button','compare-button','export-button'])$(id).disabled=value||!image||!displayReady||(media.type==='video'&&id==='crop-button');for(const id of ['video-play','video-seek'])$(id).disabled=value||media.type!=='video';}
 function sheetOpen(){return [...document.querySelectorAll('dialog')].some(d=>d.open);}
 function setBefore(value){before=value;$('compare-button').setAttribute('aria-pressed',String(value));$('compare-label').hidden=!value;render();}
 const gestures=new PhotoGestures(stage,{
@@ -84,6 +85,7 @@ const gestures=new PhotoGestures(stage,{
   onPan:(dx,dy)=>{if(draft){panCrop(draft,dx,dy,parseFloat(view.style.width)/draft.width,image.width,image.height);render();}}
 });
 function settle(){if(transition||gestures.motion){const position=Math.round(gestures.position);gestures.cancel();gestures.position=position;index=wrap(position);parameters=adjustments.values(index);changed();refreshSliders();transition=null;render();}gestures.points.clear();gestures.gesture=null;}
+const videoExporter=new VideoExportUI({getSnapshot:()=>({file:media.video.file,parameters:{...parameters},intensity,seed:media.video.seed}),lock:value=>setBusy(value),debug});
 for(const [key,name,min,max,step] of fields){const row=document.createElement('div');row.className='control';const label=document.createElement('label'),output=document.createElement('output'),input=document.createElement('input');input.id=`adjust-${key}`;label.htmlFor=input.id;label.append(name,output);input.type='range';input.min=min;input.max=max;input.step=step;row.append(label,input);$('adjustments').append(row);sliders.set(key,{input,output});input.addEventListener('input',()=>{parameters[key]=Number(input.value);adjustments.update(index,parameters);output.value=Number(input.value).toFixed(2);changed();render();});}
 refreshSliders();
 const favorites=document.createElement('div');favorites.className='favorite-controls';favorites.innerHTML='<button id="reset-preset">初期値に戻す</button><button data-favorite="0">★1</button><button data-favorite="1">★2</button><button data-favorite="2">★3</button><select id="favorite-slot" aria-label="保存先"><option value="0">★1</option><option value="1">★2</option><option value="2">★3</option></select><button id="save-favorite">保存</button>';
@@ -151,7 +153,7 @@ async function selectVideo(file){
     media.playback=new VideoPlayback(next,()=>render('video-frame'),updateVideoTime,error=>{debug?.error('video playback',error);status(error.message);});
     previous.video?.release();
     updateVideoTime(next.source);debug?.info(`video ready; frame callback=${media.playback.method}`);debug?.step('video render complete');
-    status(next.width*next.height>1920*1080||next.duration>60?'大きい動画です。1080p・30fps程度・60秒以内を推奨します。':'再生ボタンで開始・上下スワイプでフィルター（動画書き出しは未対応）');
+    status(next.width*next.height>1920*1080||next.duration>60?'大きい動画です。1080p・30fps程度・60秒以内を推奨します。':'再生ボタンで開始・上下スワイプでフィルター');
   }catch(error){
     debug?.error('video load / render',error);status(error.message);
     if(next&&media.video===next){
@@ -171,8 +173,9 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)media.playb
 
 function openSheet(id){settle();setBefore(false);$(id).showModal();}
 $('adjust-button').addEventListener('click',()=>openSheet('adjust-sheet'));
-$('export-button').addEventListener('click',()=>{if(media.type!=='image')return;openSheet('export-sheet');prepareExport();});
+$('export-button').addEventListener('click',()=>{if(media.type==='video'){settle();setBefore(false);media.playback?.pause();videoExporter.open();return;}openSheet('export-sheet');prepareExport();});
 for(const dialog of document.querySelectorAll('dialog')){
+  if(dialog.id==='video-export-sheet')continue;
   dialog.querySelector('.close-sheet').addEventListener('click',()=>dialog.close());
   dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientY<r.top||e.clientX<r.left||e.clientX>r.right)dialog.close();}});
   dialog.addEventListener('close',()=>{if(dialog.id==='export-sheet')exportToken++;});

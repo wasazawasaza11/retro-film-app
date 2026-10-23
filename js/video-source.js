@@ -19,7 +19,7 @@ export async function loadVideo(file,debug){
       element.addEventListener('loadedmetadata',onMetadata);element.addEventListener('canplay',onReady);element.addEventListener('error',onError);
       debug?.info('video objectURL created; load start');element.src=url;element.load();
     });
-    return {source:element,width:element.videoWidth,height:element.videoHeight,duration:element.duration,seed:createSeed(),release};
+    return {file,source:element,width:element.videoWidth,height:element.videoHeight,duration:element.duration,seed:createSeed(),release};
   }catch(error){release();throw error;}
 }
 

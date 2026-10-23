@@ -10,7 +10,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
   for(const filename of ['video.mp4','video.mov']){
    await choose(path.join(__dirname,'fixtures',filename));await p.waitForFunction(()=>document.getElementById('stage').dataset.mediaType==='video'&&!document.getElementById('adjust-button').disabled);
    await p.locator('#debug-panel').evaluate(e=>e.open=false);
-   assert.equal(await p.locator('#crop-button').isDisabled(),true);assert.equal(await p.locator('#export-button').isDisabled(),true);
+   assert.equal(await p.locator('#crop-button').isDisabled(),true);assert.equal(await p.locator('#export-button').isDisabled(),false);
    assert.equal(await p.locator('#preview').evaluate(c=>c.width),160);assert.equal(await p.locator('.video-decoder').count(),1);
    await p.locator('#video-play').tap();await p.waitForFunction(()=>document.querySelector('video').currentTime>.2);
    await p.locator('#adjust-button').tap();const playingTime=await p.locator('video').evaluate(v=>v.currentTime);
