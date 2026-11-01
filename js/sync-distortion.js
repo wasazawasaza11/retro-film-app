@@ -9,14 +9,18 @@ export function syncState(seed,time,settings){
   const start=slot*period+noise(seed^59,slot)*.3,length=p.duration*(.6+.4*noise(seed^71,slot)),age=t-start;
   if(age<0||age>=length)return {active:false,gain:0,shift:0,phase:0,span:.1};
   const gain=ease(age/Math.min(.12,length*.2))*ease((length-age)/Math.min(.15,length*.2));
-  return {active:true,gain,shift:smooth(seed^97,t*12)*p.shift*.012*gain,phase:noise(seed^113,slot)*Math.PI*2+age*8,span:.06+p.thickness*.55,center:Math.max(.05,Math.min(.9,p.position+(noise(seed^149,slot)-.5)*.1)),direction:noise(seed^173,slot)<.5?-1:1};
+  return {active:true,gain,shift:smooth(seed^97,t*12)*p.shift*.012*gain,phase:noise(seed^113,slot)*Math.PI*2+age*8,span:.015+p.thickness*.38,center:Math.max(.05,Math.min(.9,p.position+(noise(seed^149,slot)-.5)*.1)),direction:noise(seed^173,slot)<.5?-1:1};
 }
 export function syncRowShift(y,h,w,state,settings){
   const p=normalizeSync(settings);if(!state.active)return 0;
-  const z=(y/h-state.center)/state.span;
-  const fold=Math.exp(-(((z-.2)/.42)**2));
-  const tail=z>0?Math.sin(z*5-state.phase*.2)*Math.exp(-z*2)*.18:0;
-  return w*(state.shift+p.wave*.42*state.gain*state.direction*(fold+tail));
+  // A horizontal timing step followed by AFC re-lock over subsequent lines.
+  // 480 virtual scanlines keep the sharp onset independent of export resolution.
+  const line=(y/h-state.center)*480;
+  if(line<0)return w*state.shift;
+  const recoveryLines=Math.max(1,state.span*480);
+  const onset=ease(line/1.5);
+  const phaseError=state.direction*p.wave*.42*state.gain*onset*Math.exp(-line/recoveryLines);
+  return w*(state.shift+phaseError);
 }
 export function applySyncDistortion(ctx,w,h,seed,time,settings){
   const p=normalizeSync(settings),state=syncState(seed,time,p);
