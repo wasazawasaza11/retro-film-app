@@ -1,14 +1,14 @@
-import {normalizeSync,normalizeBleed} from './sync-distortion.js?v=20261101-5';
-import {AdjustmentStore} from './adjustment-store.js?v=20261101-5';
-import {loadImage} from './image-loader.js?v=20261101-5';
-import {Renderer} from './renderer.js?v=20261101-5';
-import {presets,fields,interpolate,wrap} from './presets.js?v=20261101-5';
-import {PhotoGestures} from './photo-gestures.js?v=20261101-5';
-import {incomingLens} from './lens.js?v=20261101-5';
-import {createCrop,constrainCrop,setCropRatio,panCrop,setCropAngle} from './crop.js?v=20261101-5';
-import {exportImage,shareableFile} from './exporter.js?v=20261101-5';
-import {loadVideo,VideoPlayback} from './video-source.js?v=20261101-5';
-import {VideoExportUI} from './video-export-ui.js?v=20261101-5';
+import {normalizeSync,normalizeBleed} from './sync-distortion.js?v=20261101-6';
+import {AdjustmentStore} from './adjustment-store.js?v=20261101-6';
+import {loadImage} from './image-loader.js?v=20261101-6';
+import {Renderer} from './renderer.js?v=20261101-6';
+import {presets,fields,interpolate,wrap} from './presets.js?v=20261101-6';
+import {PhotoGestures} from './photo-gestures.js?v=20261101-6';
+import {incomingLens} from './lens.js?v=20261101-6';
+import {createCrop,constrainCrop,setCropRatio,panCrop,setCropAngle} from './crop.js?v=20261101-6';
+import {exportImage,shareableFile} from './exporter.js?v=20261101-6';
+import {loadVideo,VideoPlayback} from './video-source.js?v=20261101-6';
+import {VideoExportUI} from './video-export-ui.js?v=20261101-6';
 const debug=window.retroDebug; const adjustments=new AdjustmentStore();
 const $=id=>{const element=document.getElementById(id);if(!element){const error=new Error(`Required DOM element #${id} is null`);debug?.error("DOM reference",error);throw error;}return element;},stage=$('stage'),view=$('photo-view');
 let displayReady=false;
@@ -186,11 +186,12 @@ for(const dialog of document.querySelectorAll('dialog')){
 }
 $('compare-button').addEventListener('click',()=>{settle();setBefore(!before);status(before?'元画像を表示中。比較を押すと加工後に戻ります。':'上下スワイプでフィルター・2本指で拡大');});
 function updateSync(){
-  syncDistortion=normalizeSync({enabled:$('sync-enabled').checked,...Object.fromEntries(['shift','wave','thickness','frequency','position'].map(k=>[k,Number($('sync-'+k).value)/100])),duration:Number($('sync-duration').value)});
-  for(const key of ['shift','wave','thickness','frequency','duration','position'])$('sync-'+key+'-value').value=key==='duration'?`${syncDistortion.duration.toFixed(1)}秒`:`${Math.round(syncDistortion[key]*100)}%`;
+  syncDistortion=normalizeSync({enabled:$('sync-enabled').checked,...Object.fromEntries(['shift','wave','thickness','frequency','top','bottom','colorNoise'].map(k=>[k,Number($('sync-'+k).value)/100])),duration:Number($('sync-duration').value)});
+  for(const key of ['top','bottom'])$('sync-'+key).value=Math.round(syncDistortion[key]*100);
+  for(const key of ['shift','wave','thickness','frequency','duration','top','bottom','colorNoise'])$('sync-'+key+'-value').value=key==='duration'?`${syncDistortion.duration.toFixed(1)}秒`:`${Math.round(syncDistortion[key]*100)}%`;
   changed();render();
 }
-for(const key of ['enabled','shift','wave','thickness','frequency','duration','position'])$('sync-'+key).addEventListener('input',updateSync);
+for(const key of ['enabled','shift','wave','thickness','frequency','duration','top','bottom','colorNoise'])$('sync-'+key).addEventListener('input',updateSync);
 function updateBleed(){
   videoBleed=normalizeBleed({enabled:$('bleed-enabled').checked,...Object.fromEntries(['amount','width','frequency'].map(k=>[k,Number($('bleed-'+k).value)/100])),duration:Number($('bleed-duration').value)});
   for(const key of ['amount','width','frequency','duration'])$('bleed-'+key+'-value').value=key==='duration'?`${videoBleed.duration.toFixed(1)}秒`:`${Math.round(videoBleed[key]*100)}%`;
