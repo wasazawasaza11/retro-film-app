@@ -29,20 +29,39 @@ export function applySyncDistortion(ctx,w,h,seed,time,settings){
   const p=normalizeSync(settings),state=syncState(seed,time,p);
   if(!state.active||(!p.shift&&!p.wave))return;
   const image=ctx.getImageData(0,0,w,h),data=image.data,row=new Uint8ClampedArray(w*4);
+  const raw=p.colorNoise&&p.wave?new Uint8ClampedArray(data):null;
   const sample=(x,c)=>{x=Math.max(0,Math.min(w-1,x));const a=Math.floor(x),b=Math.min(w-1,a+1),t=x-a;return row[a*4+c]*(1-t)+row[b*4+c]*t;};
+  const read=(x,y,c)=>{x=Math.max(0,Math.min(w-1,x));y=Math.max(0,Math.min(h-1,Math.round(y)));const a=Math.floor(x),b=Math.min(w-1,a+1),t=x-a,offset=y*w*4;return raw[offset+a*4+c]*(1-t)+raw[offset+b*4+c]*t;};
+  const clock=Math.floor(Math.max(0,time)*24),key=seed^Math.imul(clock+1,997);
   for(let y=0;y<h;y++){
     const offset=y*w*4,shift=syncRowShift(y,h,w,state,p);row.set(data.subarray(offset,offset+w*4));
-    const line=(y/h-state.center)*480,band=Math.exp(-line*line/18)*p.colorNoise*state.gain*p.wave;
-    const chroma=w*.012*band*(1-p.monochrome),clock=Math.floor(Math.max(0,time)*24);
-
-
-    if(band<.0001){for(let x=0;x<w;x++)for(let c=0;c<3;c++)data[offset+x*4+c]=sample(x-shift,c);continue;}
+    const line=(y/h-state.center)*480,virtualLine=Math.floor(y/h*480),radius=3+p.colorNoise*7;
+    const band=Math.exp(-line*line/(2*radius*radius))*Math.min(1,2.8*p.colorNoise*state.gain*Math.sqrt(p.wave));
+    if(!raw||band<.002){for(let x=0;x<w;x++)for(let c=0;c<3;c++)data[offset+x*4+c]=sample(x-shift,c);continue;}
+    // Model unstable line clocks and short dropout holds using source pixels.
+    const rowError=(noise(key^313,virtualLine)*2-1)*w*.13*band;
+    const clockScale=1+(noise(key^521,virtualLine)*2-1)*.65*band;
     for(let x=0;x<w;x++){
-      const n=(noise(seed^Math.imul(clock+1,997)^Math.imul(Math.floor(x/w*720)+1,173),Math.floor(y/h*480))*2-1);
-      const grit=n*95*band,burst=(noise(seed^clock,Math.floor(x/w*180)+Math.floor(y/h*480)*181)-.5)*75*band*(1-p.monochrome);
-      data[offset+x*4]=sample(x-shift-chroma,0)+grit+burst;
-      data[offset+x*4+1]=sample(x-shift,1)+grit-burst*.5;
-      data[offset+x*4+2]=sample(x-shift+chroma,2)+grit-burst;
+      const block=Math.floor(x/w*42),segment=virtualLine*43+block;
+      const fault=noise(key^659,segment),hold=fault>.48;
+      const sourceY=y+(hold?-1-Math.floor(noise(key^733,segment)*4):noise(key^797,segment)-.5)*h/480*band;
+      const sourceShift=syncRowShift(sourceY,h,w,state,p);
+      const address=(x-w/2)*clockScale+w/2-sourceShift+rowError+(fault-.5)*w*.08*band;
+      const r=read(address,sourceY,0),g=read(address,sourceY,1),b=read(address,sourceY,2);
+      const delay=w*.045*band*(noise(key^887,segment)*2-1);
+      const cr=read(address-delay,sourceY,0),cg=read(address-delay,sourceY,1),cb=read(address-delay,sourceY,2);
+      const luma=.299*r+.587*g+.114*b;
+      const i=.596*cr-.274*cg-.322*cb,q=.211*cr-.523*cg+.312*cb;
+      const phase=(noise(key^941,segment)*2-1)*2.2*band,cos=Math.cos(phase),sin=Math.sin(phase);
+      const iq=i*cos-q*sin,qq=i*sin+q*cos;
+      // Distort/recombine actual chroma; no additive grain or colored overlay.
+      const mono=p.monochrome;
+      const rr=(luma+.956*iq+.621*qq)*(1-mono)+luma*mono;
+      const gg=(luma-.272*iq-.647*qq)*(1-mono)+luma*mono;
+      const bb=(luma-1.106*iq+1.703*qq)*(1-mono)+luma*mono;
+      data[offset+x*4]=sample(x-shift,0)*(1-band)+rr*band;
+      data[offset+x*4+1]=sample(x-shift,1)*(1-band)+gg*band;
+      data[offset+x*4+2]=sample(x-shift,2)*(1-band)+bb*band;
     }
   }
   // Clamp edge sampling instead of wrapping or revealing transparent strips.
