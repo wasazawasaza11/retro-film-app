@@ -1,6 +1,5 @@
-import {drawTapeNoise} from './tape-noise.js?v=20261101-2';
-import {drawHandheld} from './handheld.js?v=20261101-2';
-import {applyVhs} from './vhs-effects.js?v=20261101-2';
+import {drawHandheld} from './handheld.js?v=20261024-5';
+import {applyVhs} from './vhs-effects.js?v=20261024-5';
 const clamp=v=>Math.max(0,Math.min(255,v));
 export function randomFromSeed(seed){let s=seed>>>0;return ()=>{s=(s+0x6D2B79F5)>>>0;let t=s;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;};}
 export function applyColorAdjustments(data,p){const gain=2**p.exposure;for(let i=0;i<data.length;i+=4){let r=data[i]*gain,g=data[i+1]*gain,b=data[i+2]*gain;const l=.2126*r+.7152*g+.0722*b;r=l+(r-l)*p.saturation+22*p.temperature;g=l+(g-l)*p.saturation+4*p.temperature;b=l+(b-l)*p.saturation-22*p.temperature;data[i]=clamp(((r-128)*p.contrast+128)*(1-p.fade*.35)+p.fade*34);data[i+1]=clamp(((g-128)*p.contrast+128)*(1-p.fade*.35)+p.fade*31);data[i+2]=clamp(((b-128)*p.contrast+128)*(1-p.fade*.35)+p.fade*28);}}
@@ -24,7 +23,6 @@ export function processFrame(source,w,h,parameters,seed,intensity=1,temporal=nul
   if(temporal){ctx.save();ctx.translate(temporal.offsetX*w,temporal.offsetY*h);}
   applyScratches(ctx,w,h,p.scratches*(temporal?.scratchGain??1),temporal?.scratchSeed??seed);applyDust(ctx,w,h,p.dust*(temporal?.dustGain??1),temporal?.dustSeed??seed);
   if(temporal)ctx.restore();
-  if(temporal&&parameters.tapeNoise?.enabled)drawTapeNoise(ctx,w,h,seed,temporal.time,parameters.tapeNoise);
   if(parameters.monochrome){const gray=ctx.getImageData(0,0,w,h);applyMonochrome(gray.data,parameters.monochrome);ctx.putImageData(gray,0,0);}
   // Blend the complete effected frame with the original, not effect parameters.
   if(original){const effected=ctx.getImageData(0,0,w,h),t=Math.max(0,Math.min(1,intensity));for(let i=0;i<effected.data.length;i++)effected.data[i]=original[i]*(1-t)+effected.data[i]*t;ctx.putImageData(effected,0,0);}return canvas;
