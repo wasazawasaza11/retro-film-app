@@ -23,3 +23,5 @@
 #app-version{position:fixed;left:calc(8px + env(safe-area-inset-left));bottom:calc(4px + env(safe-area-inset-bottom));z-index:5;color:#a6a297;font:9px/1.2 ui-monospace,monospace;opacity:.55;pointer-events:none;user-select:none}
 
 #video-sync-controls{min-width:0;margin:10px 0;padding:8px;border:1px solid #5558;border-radius:8px}#video-sync-controls legend{font-size:12px}#video-sync-controls small{display:block;font-size:10px;opacity:.65;line-height:1.5}#sync-enabled{width:auto}
+
+#video-bleed-controls{min-width:0;margin:10px 0;padding:8px;border:1px solid #5558;border-radius:8px}#video-bleed-controls legend{font-size:12px}#video-bleed-controls small{display:block;font-size:10px;opacity:.65;line-height:1.5}#bleed-enabled{width:auto}

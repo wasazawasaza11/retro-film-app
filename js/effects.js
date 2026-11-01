@@ -1,6 +1,6 @@
-import {applySyncDistortion} from './sync-distortion.js?v=20261101-3';
-import {drawHandheld} from './handheld.js?v=20261101-3';
-import {applyVhs} from './vhs-effects.js?v=20261101-3';
+import {applySyncDistortion,applyVideoBleed} from './sync-distortion.js?v=20261101-4';
+import {drawHandheld} from './handheld.js?v=20261101-4';
+import {applyVhs} from './vhs-effects.js?v=20261101-4';
 const clamp=v=>Math.max(0,Math.min(255,v));
 export function randomFromSeed(seed){let s=seed>>>0;return ()=>{s=(s+0x6D2B79F5)>>>0;let t=s;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;};}
 export function applyColorAdjustments(data,p){const gain=2**p.exposure;for(let i=0;i<data.length;i+=4){let r=data[i]*gain,g=data[i+1]*gain,b=data[i+2]*gain;const l=.2126*r+.7152*g+.0722*b;r=l+(r-l)*p.saturation+22*p.temperature;g=l+(g-l)*p.saturation+4*p.temperature;b=l+(b-l)*p.saturation-22*p.temperature;data[i]=clamp(((r-128)*p.contrast+128)*(1-p.fade*.35)+p.fade*34);data[i+1]=clamp(((g-128)*p.contrast+128)*(1-p.fade*.35)+p.fade*31);data[i+2]=clamp(((b-128)*p.contrast+128)*(1-p.fade*.35)+p.fade*28);}}
@@ -24,10 +24,13 @@ export function processFrame(source,w,h,parameters,seed,intensity=1,temporal=nul
   if(temporal){ctx.save();ctx.translate(temporal.offsetX*w,temporal.offsetY*h);}
   applyScratches(ctx,w,h,p.scratches*(temporal?.scratchGain??1),temporal?.scratchSeed??seed);applyDust(ctx,w,h,p.dust*(temporal?.dustGain??1),temporal?.dustSeed??seed);
   if(temporal)ctx.restore();
-  if(temporal&&parameters.syncDistortion?.enabled)applySyncDistortion(ctx,w,h,seed,temporal.time,parameters.syncDistortion);
   if(parameters.monochrome){const gray=ctx.getImageData(0,0,w,h);applyMonochrome(gray.data,parameters.monochrome);ctx.putImageData(gray,0,0);}
   // Blend the complete effected frame with the original, not effect parameters.
-  if(original){const effected=ctx.getImageData(0,0,w,h),t=Math.max(0,Math.min(1,intensity));for(let i=0;i<effected.data.length;i++)effected.data[i]=original[i]*(1-t)+effected.data[i]*t;ctx.putImageData(effected,0,0);}return canvas;
+  if(original){const effected=ctx.getImageData(0,0,w,h),t=Math.max(0,Math.min(1,intensity));for(let i=0;i<effected.data.length;i++)effected.data[i]=original[i]*(1-t)+effected.data[i]*t;ctx.putImageData(effected,0,0);}
+  // Warp the blended image itself; blending an unwarped copy would add ghosts.
+  if(temporal&&parameters.syncDistortion?.enabled){const p=parameters.syncDistortion,t=Math.min(1,intensity);applySyncDistortion(ctx,w,h,seed,temporal.time,{...p,shift:p.shift*t,wave:p.wave*t});}
+  if(temporal&&parameters.videoBleed?.enabled){const p=parameters.videoBleed;applyVideoBleed(ctx,w,h,seed,temporal.time,{...p,amount:p.amount*Math.min(1,intensity)});}
+  return canvas;
 }
 
 export function applyMonochrome(data,amount=1){for(let i=0;i<data.length;i+=4){const l=.2126*data[i]+.7152*data[i+1]+.0722*data[i+2];for(let c=0;c<3;c++)data[i+c]=data[i+c]*(1-amount)+l*amount;}}
