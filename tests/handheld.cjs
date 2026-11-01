@@ -2,7 +2,7 @@ const assert=require('node:assert/strict'),path=require('node:path');
 const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
 (async()=>{const b=await chromium.launch({headless:true,channel:'msedge'});try{const p=await b.newPage({viewport:{width:390,height:844}});const errors=[];p.on('pageerror',e=>errors.push(e.message));await p.goto('http://127.0.0.1:8087/');
  const result=await p.evaluate(async()=>{
-  const {handheldPose,drawHandheld}=await import('./js/handheld.js?v=20261101-1');
+  const {handheldPose,drawHandheld}=await import('./js/handheld.js?v=20261101-2');
   let uncovered=0,maxStep=0,maxAngle=0;
   for(const [w,h] of [[390,844],[844,390],[320,240]]){let prev=null;for(let f=0;f<600;f++){
     const pose=handheldPose(32,f/60,1,w,h),c=Math.cos(pose.angle),s=Math.sin(pose.angle);

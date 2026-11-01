@@ -1,14 +1,14 @@
-import {normalizeTapeNoise} from './tape-noise.js?v=20261101-1';
-import {AdjustmentStore} from './adjustment-store.js?v=20261101-1';
-import {loadImage} from './image-loader.js?v=20261101-1';
-import {Renderer} from './renderer.js?v=20261101-1';
-import {presets,fields,interpolate,wrap} from './presets.js?v=20261101-1';
-import {PhotoGestures} from './photo-gestures.js?v=20261101-1';
-import {incomingLens} from './lens.js?v=20261101-1';
-import {createCrop,constrainCrop,setCropRatio,panCrop,setCropAngle} from './crop.js?v=20261101-1';
-import {exportImage,shareableFile} from './exporter.js?v=20261101-1';
-import {loadVideo,VideoPlayback} from './video-source.js?v=20261101-1';
-import {VideoExportUI} from './video-export-ui.js?v=20261101-1';
+import {normalizeTapeNoise} from './tape-noise.js?v=20261101-2';
+import {AdjustmentStore} from './adjustment-store.js?v=20261101-2';
+import {loadImage} from './image-loader.js?v=20261101-2';
+import {Renderer} from './renderer.js?v=20261101-2';
+import {presets,fields,interpolate,wrap} from './presets.js?v=20261101-2';
+import {PhotoGestures} from './photo-gestures.js?v=20261101-2';
+import {incomingLens} from './lens.js?v=20261101-2';
+import {createCrop,constrainCrop,setCropRatio,panCrop,setCropAngle} from './crop.js?v=20261101-2';
+import {exportImage,shareableFile} from './exporter.js?v=20261101-2';
+import {loadVideo,VideoPlayback} from './video-source.js?v=20261101-2';
+import {VideoExportUI} from './video-export-ui.js?v=20261101-2';
 const debug=window.retroDebug; const adjustments=new AdjustmentStore();
 const $=id=>{const element=document.getElementById(id);if(!element){const error=new Error(`Required DOM element #${id} is null`);debug?.error("DOM reference",error);throw error;}return element;},stage=$('stage'),view=$('photo-view');
 let displayReady=false;
@@ -186,11 +186,11 @@ for(const dialog of document.querySelectorAll('dialog')){
 $('compare-button').addEventListener('click',()=>{settle();setBefore(!before);status(before?'元画像を表示中。比較を押すと加工後に戻ります。':'上下スワイプでフィルター・2本指で拡大');});
 function updateTapeNoise(){
   const top=Number($('tape-top').value),bottom=Number($('tape-bottom').value);
-  tapeNoise=normalizeTapeNoise({enabled:$('tape-enabled').checked,top:Math.min(top,bottom)/100,bottom:Math.max(top,bottom)/100,amount:Number($('tape-amount').value)/100,size:Number($('tape-size').value)/100,frequency:Number($('tape-frequency').value)/100});
-  for(const key of ['top','bottom','amount','size','frequency']){$('tape-'+key).value=Math.round(tapeNoise[key]*100);$('tape-'+key+'-value').value=`${Math.round(tapeNoise[key]*100)}%`;}
+  tapeNoise=normalizeTapeNoise({enabled:$('tape-enabled').checked,top:Math.min(top,bottom)/100,bottom:Math.max(top,bottom)/100,amount:Number($('tape-amount').value)/100,size:Number($('tape-size').value)/100,frequency:Number($('tape-frequency').value)/100,distortion:Number($('tape-distortion').value)/100});
+  for(const key of ['top','bottom','amount','size','frequency','distortion']){$('tape-'+key).value=Math.round(tapeNoise[key]*100);$('tape-'+key+'-value').value=`${Math.round(tapeNoise[key]*100)}%`;}
   changed();render();
 }
-for(const key of ['enabled','top','bottom','amount','size','frequency'])$('tape-'+key).addEventListener('input',updateTapeNoise);
+for(const key of ['enabled','top','bottom','amount','size','frequency','distortion'])$('tape-'+key).addEventListener('input',updateTapeNoise);
 $('video-handheld').addEventListener('input',()=>{handheld=Number($('video-handheld').value)/100;$('video-handheld-value').value=handheld?`${Math.round(handheld*100)}%`:'OFF';changed();render();});
 $('intensity').addEventListener('input',()=>{intensity=Number($('intensity').value)/100;$('intensity-value').value=`${$('intensity').value}%`;changed();render();});
 function syncCropControls(){
